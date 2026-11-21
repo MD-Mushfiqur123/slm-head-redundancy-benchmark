@@ -67,6 +67,15 @@ addresses this on a free Colab T4 runtime:
 Open directly in Colab:
 `https://colab.research.google.com/github/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/colab/slm_head_redundancy_gpu.ipynb`
 
+Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standalone CLI:
+
+```bash
+python scripts/gpu_extension.py --model gpt2_small --ratio 0.30
+python scripts/gpu_extension.py --model smollm_135m --ratio 0.055556
+```
+
+All stages carry per-model/per-ratio caches in `results/raw/` (`--force` recomputes).
+
 Everything the notebook prints is measured on the runtime (/TRUTH law); results land in
 `results/raw/gpu_*.json` and can be pushed back to a `gpu-telemetry` branch with the
 optional final cell (user's own fine-grained PAT, never stored).
