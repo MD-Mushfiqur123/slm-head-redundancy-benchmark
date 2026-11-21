@@ -52,6 +52,25 @@ Interactive exploration:
 streamlit run demo/app.py
 ```
 
+## GPU extension on Google Colab
+
+The CPU-only sandbox produced no GPU wall-clock telemetry. `colab/slm_head_redundancy_gpu.ipynb`
+addresses this on a free Colab T4 runtime:
+
+- CUDA Taylor/Fisher calibration (150 WikiText-2 windows, full backward passes),
+- synchronized `torch.cuda.synchronize()` wall-clock decode latency at $B\\in\\{1,4,8\\}$,
+  unpruned vs. 30% physically excised model,
+- KV-cache footprint measured **directly from the live `past_key_values` tensors**
+  (cross-validating Theorem 3) across the context-length grid,
+- GQA-safe global mask, surgery-vs-gating equivalence check, WikiText-2 / PTB / LAMBADA retention.
+
+Open directly in Colab:
+`https://colab.research.google.com/github/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/colab/slm_head_redundancy_gpu.ipynb`
+
+Everything the notebook prints is measured on the runtime (/TRUTH law); results land in
+`results/raw/gpu_*.json` and can be pushed back to a `gpu-telemetry` branch with the
+optional final cell (user's own fine-grained PAT, never stored).
+
 ## Method summary
 
 1. **Gating formalisation.** Every head $(l,h)$ receives a binary gate
