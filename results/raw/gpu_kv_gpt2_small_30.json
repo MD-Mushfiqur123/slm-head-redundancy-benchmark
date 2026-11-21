@@ -1,0 +1,48 @@
+{
+  "model": "gpt2_small",
+  "gpu": "Tesla T4",
+  "dtype_bytes": 4,
+  "fp16": false,
+  "seq_lens": {
+    "128": {
+      "T": 128,
+      "unpruned": 9.0,
+      "pruned30": 6.3125,
+      "reduction_pct": 29.861111111111114,
+      "theoretical_MB": 6.3125,
+      "unpruned_theoretical_MB": 9.0
+    },
+    "256": {
+      "T": 256,
+      "unpruned": 18.0,
+      "pruned30": 12.625,
+      "reduction_pct": 29.861111111111114,
+      "theoretical_MB": 12.625,
+      "unpruned_theoretical_MB": 18.0
+    },
+    "512": {
+      "T": 512,
+      "unpruned": 36.0,
+      "pruned30": 25.25,
+      "reduction_pct": 29.861111111111114,
+      "theoretical_MB": 25.25,
+      "unpruned_theoretical_MB": 36.0
+    },
+    "768": {
+      "T": 768,
+      "unpruned": 54.0,
+      "pruned30": 37.875,
+      "reduction_pct": 29.861111111111114,
+      "theoretical_MB": 37.875,
+      "unpruned_theoretical_MB": 54.0
+    },
+    "1024": {
+      "T": 1024,
+      "unpruned": 72.0,
+      "pruned30": 50.5,
+      "reduction_pct": 29.861111111111114,
+      "theoretical_MB": 50.5,
+      "unpruned_theoretical_MB": 72.0
+    }
+  }
+}
