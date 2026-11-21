@@ -84,6 +84,20 @@ The notebook also carries a built-in **Run C — fine-tuning repayment** section
 `scripts/finetune_repayment.py` and renders the pre/post-repayment table with
 download buttons).
 
+#### Dedicated long-jobs notebook
+
+`colab/slm_head_redundancy_long_molab.py` bundles the two multi-hour experiments
+into one 12-hour molab session, with measured-table rendering and download
+cards for each:
+
+- **Run B — 7-architecture matrix** (`--model all`, resumable per-stage caches,
+  GQA auto-snap; ~2–3 h), and
+- **Run C — fine-tuning repayment** (ratios × epochs × train-windows UI,
+  optional user train corpus via `--corpus`; ~30–90 min).
+
+Same Add-from-GitHub path: `MD-Mushfiqur123/slm-head-redundancy-benchmark` →
+`colab/slm_head_redundancy_long_molab.py`.
+
 Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standalone CLI:
 
 ```bash
