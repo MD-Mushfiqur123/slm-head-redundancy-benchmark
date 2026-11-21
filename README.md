@@ -85,6 +85,8 @@ Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standal
 ```bash
 python scripts/gpu_extension.py --model gpt2_small --ratio 0.30
 python scripts/gpu_extension.py --model smollm_135m --ratio 0.055556
+# user corpus instead of WikiText-2 for calibration + WT2-style eval:
+python scripts/gpu_extension.py --model opt_125m --ratio 0.30 --corpus data/my_corpus.txt
 ```
 
 The registry now covers **seven sub-billion architectures**, spanning four parameter
@@ -101,6 +103,46 @@ All stages carry per-model/per-ratio caches in `results/raw/` (`--force` recompu
 Everything the notebook prints is measured on the runtime (/TRUTH law); results land in
 `results/raw/gpu_*.json` and can be pushed back to a `gpu-telemetry` branch with the
 optional final cell (user's own fine-grained PAT, never stored).
+
+### Runbook: fast vs. long experiments
+
+- **Fast (minutes, any GPU runtime):** one-model 30% profile —
+  `--model gpt2_small` (~5 min on Blackwell); a calibration-only cache warm-up;
+  the fp16 on/off switch for precision ablation.
+- **Long (hours, 12-hour molab session):** `--model all` (seven architectures ×
+  five stages, resumable — GQA ratios now snap automatically, e.g. Qwen2.5-0.5B
+  logs `0.3000 -> 0.291667` and proceeds), and the fine-tuning repayment sweep
+  (`scripts/finetune_repayment.py`, see below).
+
+### Fine-tuning repayment experiment (the paper's Future-Work track i)
+
+`scripts/finetune_repayment.py` measures how much of the excision damage a small
+fine-tuning budget repairs — the comparison the paper's honest no-repayment budgets
+(5–10%) currently lack:
+
+```bash
+python scripts/finetune_repayment.py --model gpt2_small \
+    --ratios 0.1 0.2 0.3 0.4 --epochs 2 --train-windows 2000
+# with a user corpus (calib+eval) and a disjoint training corpus:
+python scripts/finetune_repayment.py --model gpt2_small \
+    --ratios 0.3 --corpus data/eval_corpus.txt --train-corpus data/train_corpus.txt
+```
+
+It calibrates Taylor importance exactly like the main pipeline, excises with GQA-safe
+physical surgery, fine-tunes each pruned model (AdamW, cosine schedule) and writes
+pre/post-repayment perplexity, ΔPPL and repair-% per ratio to
+`results/raw/repayment_<model>.json` + `results/repayment_<model>.csv`. Every number
+is measured at runtime (/TRUTH law); a 12-hour molab session covers all four ratios
+comfortably.
+
+### User-supplied corpora
+
+`src/core/custom_dataset.py` loads user datasets for any pipeline stage via the
+`--corpus` flag: `.txt` (one document per line), `.csv`/`.tsv` (text column
+auto-detected or forced with `text_column=`), `.jsonl` (first of
+`text/content/body/sentence/document`), or `hf:org/name` Hugging Face datasets.
+The first `--num-calibration` windows go to calibration, the next `--num-eval` to
+evaluation, preserving the paper's zero-overlap isolation protocol.
 
 ## Method summary
 

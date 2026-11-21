@@ -58,8 +58,9 @@ rises from 36.6757 to 55.6953 ($+51.9\%$). A four-way paradigm ablation shows th
 sensitivity ranking dominates at equal sparsity: Taylor (55.6953) outperforms the
 L2 weight-norm heuristic (641.1694) and the five-seed random control
 (270.7793$\pm$155.3170). Physically excised checkpoints reduce decode latency by
-up to 18.2\% ($B{=}1$) and the Theorem-3 KV-cache footprint by exactly 33.3\%
-($B{=}8$, $T{=}1024$, fp16).
+up to 18.2\% ($B{=}1$) on CPU and the Theorem-3 KV-cache footprint by exactly 33.3\%
+($B{=}8$, $T{=}1024$, fp16), while two CUDA replications measure wall-clock
+decode parity with the same exact memory reduction.
 The study contributes an exact, repayment-free, audit-traceable methodology and
 demonstrates that measured sensitivity geometry---not structural symmetry---should
 govern non-uniform head allocation for on-device SLM deployment.
@@ -247,8 +248,9 @@ We benchmark three architectures (Table~\ref{tab:arch}): GPT-2 Small
 positions), GPT-2 Medium (355M; 24 layers; 16 heads; $d=1024$), and
 SmolLM-135M (135M; 30 layers; 9 query heads over 3 KV groups, i.e.\ GQA with
 group size 3; $d=576$; Pre-RMSNorm; RoPE~\cite{su2024roformer}; SwiGLU~\cite{shazeer2020glu}).
-All experiments run in fp32 on CPU; Section~\ref{sec:gpu} additionally
-replicates the representative 30\% configuration on a Tesla T4 GPU.
+All experiments run in fp32 on CPU; Section~\ref{sec:gpu}
+additionally replicates the representative 30\% configuration on two CUDA
+backends (Tesla T4 in fp32; RTX PRO 6000 Blackwell end-to-end in fp16).
 
 \begin{table}[!t]
 \caption{Benchmark architecture matrix (\textsc{measured} parameter counts).}

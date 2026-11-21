@@ -45,6 +45,7 @@ from src.core.data import (  # noqa: E402
     load_ptb_sentences,
     load_wikitext_split,
 )
+from src.core.custom_dataset import load_custom_rows  # noqa: E402
 from src.core.hooks import HeadGatingHookManager  # noqa: E402
 from src.core.model_loader import MODEL_REGISTRY, load_model, load_tokenizer  # noqa: E402
 from src.eval.downstream import evaluate_lambada  # noqa: E402
@@ -80,6 +81,10 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--lat-repeats", type=int, default=7)
     ap.add_argument("--lat-warmup", type=int, default=2)
     ap.add_argument("--fp16", action="store_true", help="fp16 latency/KV profiling")
+    ap.add_argument("--corpus", default="",
+                    help="user corpus replacing WikiText-2 for calibration + WT2 eval "
+                         "(.txt / .csv / .jsonl / hf:org/name); first windows go to "
+                         "calibration, the next ones to evaluation")
     ap.add_argument("--force", action="store_true", help="recompute cached stages")
     ap.add_argument("--no-plots", action="store_true", help="skip matplotlib outputs")
     return ap.parse_args()
@@ -133,6 +138,18 @@ def main() -> None:
 def run(args: argparse.Namespace) -> None:
     spec = MODEL_REGISTRY[args.model]
     kv_group = spec.num_heads // spec.num_kv_heads
+    if kv_group > 1:
+        total_heads = spec.num_layers * spec.num_heads
+        excised = int(round(total_heads * args.ratio))
+        excised = (excised // kv_group) * kv_group
+        if excised == 0 and args.ratio > 0:
+            excised = kv_group
+        snapped = excised / total_heads
+        if snapped != args.ratio:
+            print(f"[gqa] {spec.key}: kv_group={kv_group}; snapped ratio "
+                  f"{args.ratio:.4f} -> {snapped:.6f} "
+                  f"({excised}/{total_heads} heads, group-aligned)")
+            args.ratio = snapped
     full_word = args.model != "smollm_135m"
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -170,7 +187,11 @@ def run(args: argparse.Namespace) -> None:
         banner("cache hit: GPU importance matrices loaded")
     else:
         banner(f"stage 1: CUDA calibration, {args.num_calibration} windows, batch {args.batch_size}")
-        rows = load_wikitext_split("validation")
+        if args.corpus:
+            rows = load_custom_rows(args.corpus)
+            print(f"corpus: {len(rows)} rows from {args.corpus}")
+        else:
+            rows = load_wikitext_split("validation")
         calibration, _ = calibration_and_eval_sequences(
             rows, tok, num_calibration=args.num_calibration,
             num_eval=args.num_eval, window=args.window, min_tokens=50)
@@ -230,7 +251,10 @@ def run(args: argparse.Namespace) -> None:
         banner("cache hit: retention results")
     else:
         banner("stage 3: WikiText-2 / PTB / LAMBADA on CUDA (gated ablation)")
-        wt_rows = load_wikitext_split("validation")
+        if args.corpus:
+            wt_rows = load_custom_rows(args.corpus)
+        else:
+            wt_rows = load_wikitext_split("validation")
         _, evaluation = calibration_and_eval_sequences(
             wt_rows, tok, num_calibration=args.num_calibration,
             num_eval=args.num_eval, window=args.window, min_tokens=50)
@@ -244,6 +268,8 @@ def run(args: argparse.Namespace) -> None:
         lambada = load_lambada_texts(args.num_lambada, "test")
 
         results_eval = {"model": spec.key, "ratio": args.ratio, "device": gpu_name,
+                        "corpus": (os.path.basename(args.corpus) if args.corpus
+                                   else "wikitext-2-raw-v1"),
                         "protocol": {"window": args.window, "stride": args.stride,
                                      "num_eval": args.num_eval,
                                      "lambada": args.num_lambada}}
@@ -266,7 +292,7 @@ def run(args: argparse.Namespace) -> None:
         free_vram()
         json.dump(results_eval, open(ppl_path, "w"), indent=2)
 
-    ref = PAPER_CPU_PPL.get(spec.key)
+    ref = None if args.corpus else PAPER_CPU_PPL.get(spec.key)
     if ref:
         u = results_eval["wt2_unpruned"]["ppl"]
         print(f"cross-check vs CPU paper baseline: paper={ref}  here={u:.4f}  "
