@@ -1,0 +1,234 @@
+"""SLM-HEAD-REDUNDANCY-MONUMENT — GPU extension as a marimo notebook.
+
+Run it on molab (https://molab.marimo.io):
+  1. New notebook > Add from GitHub:
+     MD-Mushfiqur123/slm-head-redundancy-benchmark > colab/slm_head_redundancy_gpu_molab.py
+  2. Toggle the GPU in the notebook specs button (header).
+  3. Pick a model, press "Run". Artifacts land in results/raw/ inside the
+     cloned repo; download the JSON/PNG files below and push them back
+     through the maintained pipeline (/TRUTH law: everything measured).
+"""
+
+import marimo
+
+__generated_with = "0.17.8"
+app = marimo.App()
+
+
+@app.cell
+def _():
+    import json
+    import os
+    import subprocess
+    import sys
+    import marimo as mo
+    return json, mo, os, subprocess, sys
+
+
+@app.cell
+def _(os, subprocess):
+    REPO_URL = "https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark"
+    REPO_DIR = "slm-head-redundancy-benchmark"
+    if not os.path.isdir(REPO_DIR):
+        subprocess.run(
+            ["git", "clone", "--depth", "1", REPO_URL, REPO_DIR],
+            check=True,
+        )
+    return REPO_DIR,
+
+
+@app.cell
+def _(subprocess, sys):
+    def _ensure(pkg: str) -> None:
+        try:
+            __import__(pkg)
+        except ImportError:
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-q", pkg], check=True
+            )
+
+    for _p in ("transformers", "datasets", "matplotlib", "tqdm"):
+        _ensure(_p)
+    return
+
+
+@app.cell
+def _(mo, subprocess):
+    try:
+        _p = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader"],
+            capture_output=True, text=True,
+        )
+        _name = _p.stdout.strip() or "no GPU detected"
+    except FileNotFoundError:
+        _name = "no GPU detected (nvidia-smi নেই)"
+    mo.vstack([
+        mo.md(f"**GPU:** {_name}"),
+        mo.md("GPU না থাকলে notebook specs বোতাম থেকে GPU অন করো (molab: RTX Pro 6000 Blackwell, 96 GB)।"),
+    ])
+    return
+
+
+@app.cell
+def _(mo):
+    MODEL = mo.ui.dropdown(
+        options=[
+            "gpt2_small", "gpt2_medium", "smollm_135m",
+            "opt_125m", "pythia_160m", "pythia_410m", "qwen2_05b", "all",
+        ],
+        value="gpt2_small",
+        label="model (all = পূর্ণ ৭-মডেল ম্যাট্রিক্স)",
+    )
+    RATIO = mo.ui.text(value="0.30", label="pruning ratio", full_width=False)
+    FP16 = mo.ui.switch(label="fp16 latency/KV profile", value=False)
+    FORCE = mo.ui.switch(label="force rerun (ক্যাশ বাদ দিয়ে নতুন করে)", value=False)
+    RUN = mo.ui.run_button(label="▶️ Run GPU extension")
+    mo.vstack([MODEL, RATIO, FP16, FORCE, RUN])
+    return FORCE, FP16, MODEL, RATIO, RUN
+
+
+@app.cell
+def _(FORCE, FP16, MODEL, RATIO, RUN, mo, os, subprocess, sys):
+    mo.stop(
+        not RUN.value,
+        "বোতামে ক্লিক করলে রান শুরু হবে (resumable: এক রানের আর্টিফ্যাক্ট আরেক রানে কাজে লাগে)।",
+    )
+    model_key = MODEL.value
+    ratio = float(RATIO.value)
+    _kv_warn = {
+        "smollm_135m": 3,
+        "qwen2_05b": 7,
+    }
+    import math
+
+    if model_key in _kv_warn:
+        g = _kv_warn[model_key]
+        heads = {"smollm_135m": 270, "qwen2_05b": 336}[model_key]
+        n = round(heads * ratio)
+        if n % g != 0:
+            _alt = (n // g) * g / heads
+            raise ValueError(
+                f"{model_key}: ratio {ratio} excises {n} heads, "
+                f"not a multiple of the KV group {g}; use e.g. {_alt:.6f}"
+            )
+    cmd = [sys.executable, "scripts/gpu_extension.py", "--model", model_key,
+           "--ratio", repr(ratio)]
+    if FP16.value:
+        cmd.append("--fp16")
+    if FORCE.value:
+        cmd.append("--force")
+    _proc = subprocess.run(
+        cmd, capture_output=True, text=True,
+        cwd=os.path.abspath("slm-head-redundancy-benchmark"),
+    )
+    out = mo.accordion(
+        {"full run log": (_proc.stdout[-20000:] + "\n" + _proc.stderr[-4000:])}
+    )
+    if _proc.returncode != 0:
+        raise RuntimeError(f"gpu_extension.py exited {_proc.returncode}")
+    mo.vstack([
+        mo.md("## ✅ রান শেষ — নিচে ফলাফল ও ডাউনলোড"),
+        out,
+    ])
+    return model_key, ratio
+
+
+@app.cell
+def _(json, mo, os, ratio, model_key):
+    def _tag(r: float) -> str:
+        return ("%.1f" % (100 * r)).replace(".0", "")
+
+    _keys = (
+        ["gpt2_small", "gpt2_medium", "smollm_135m", "opt_125m",
+         "pythia_160m", "pythia_410m", "qwen2_05b"]
+        if model_key == "all"
+        else [model_key]
+    )
+    _summaries = []
+    for _k in _keys:
+        _p = os.path.join(
+            "slm-head-redundancy-benchmark",
+            "results/raw", f"gpu_summary_{_k}_{_tag(ratio)}.json",
+        )
+        if os.path.exists(_p):
+            _summaries.append((_k, _p, json.load(open(_p))))
+    _rows = [
+        f"| {_k} | {s['gpu']} | {s['excised_heads']}/{s['total_heads']} | "
+        f"{s['retention']['wt2_unpruned']['ppl']:.4f} | "
+        f"{s['retention']['wt2_pruned']['ppl']:.4f} | "
+        f"{100*s['retention']['lambada_unpruned']['top1_accuracy']:.1f}% | "
+        f"{100*s['retention']['lambada_pruned']['top1_accuracy']:.1f}% | "
+        f"{list(s['kv_cache']['seq_lens'].values())[-1]['reduction_pct']:.1f}% |"
+        for _k, _p, s in _summaries
+    ]
+    mo.md(
+        "## Measured summary (/TRUTH — runtime-executed)\n\n"
+        "| model | GPU | heads excised | WT-2 PPL base | WT-2 PPL pruned | LAMBADA base | LAMBADA pruned | KV cut |\n"
+        "|---|---|---|---|---|---|---|---|\n" + "\n".join(_rows)
+    ) if _rows else mo.md("আর্টিফ্যাক্ট নেই — আগে রান করো।")
+    return (os,)
+
+
+@app.cell
+def _(json, mo, os, ratio, model_key):
+    def _tag2(r: float) -> str:
+        return ("%.1f" % (100 * r)).replace(".0", "")
+
+    _keys2 = (
+        ["gpt2_small", "gpt2_medium", "smollm_135m", "opt_125m",
+         "pythia_160m", "pythia_410m", "qwen2_05b"]
+        if model_key == "all"
+        else [model_key]
+    )
+    _stages = ("summary", "ppl", "latency", "mask", "kv")
+    _files = []
+    for _k in _keys2:
+        for _st in _stages:
+            _p = os.path.join(
+                "slm-head-redundancy-benchmark",
+                "results/raw", f"gpu_{_st}_{_k}_{_tag2(ratio)}.json",
+            )
+            if os.path.exists(_p):
+                _files.append(_p)
+    _cards = []
+    for _p in _files:
+        with open(_p, "rb") as fh:
+            _cards.append(
+                mo.download(data=fh.read(), filename=os.path.basename(_p))
+            )
+    mo.vstack(
+        [mo.md("### 📥 download measured artifacts (JSON)")] + _cards
+        if _cards else [mo.md("কোনো JSON আর্টিফ্যাক্ট নেই।")]
+    )
+    return
+
+
+@app.cell
+def _(mo, os, ratio, model_key):
+    def _tag3(r: float) -> str:
+        return ("%.1f" % (100 * r)).replace(".0", "")
+
+    _keys3 = (
+        ["gpt2_small", "gpt2_medium", "smollm_135m", "opt_125m",
+         "pythia_160m", "pythia_410m", "qwen2_05b"]
+        if model_key == "all"
+        else [model_key]
+    )
+    _figs = []
+    for _k in _keys3:
+        for _fig in ("latency", "kv"):
+            _p = os.path.join(
+                "slm-head-redundancy-benchmark",
+                "results/figures", f"gpu_{_fig}_{_k}.png",
+            )
+            if os.path.exists(_p):
+                _figs.append(mo.image(src=_p, width=720))
+    mo.vstack(
+        [mo.md("### 🖼 measured figures")] + _figs
+        if _figs else [mo.md("প্লট নেই (--no-plots এড়ানো হয়েছে বা রান হয়নি)।")]
+    )
+    return
+
+
+if __name__ == "__main__":
+    app.run()

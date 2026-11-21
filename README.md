@@ -67,6 +67,19 @@ addresses this on a free Colab T4 runtime:
 Open directly in Colab:
 `https://colab.research.google.com/github/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/colab/slm_head_redundancy_gpu.ipynb`
 
+### molab (marimo) alternative
+
+Prefer [molab](https://molab.marimo.io)? It hosts marimo notebooks on CoreWeave with a free
+**NVIDIA RTX Pro 6000 Blackwell (96 GB VRAM)** GPU, 12-hour sessions and 32 GB RAM — strictly
+more headroom than a Colab T4. Add the GitHub-synced notebook:
+
+- `MD-Mushfiqur123/slm-head-redundancy-benchmark` → `colab/slm_head_redundancy_gpu_molab.py`
+
+Toggle the GPU in the notebook-specs button, pick a model (all seven are in the dropdown,
+plus `all` for the full matrix), and press Run. The marimo app clones this repository,
+installs requirements, drives the same measured `/TRUTH` pipeline
+(`scripts/gpu_extension.py`), and offers the JSON artifacts and PNG figures for download.
+
 Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standalone CLI:
 
 ```bash
