@@ -1,0 +1,20 @@
+{
+  "total_heads": 144,
+  "Early (L0--L3)": {
+    "total_heads": 48,
+    "excised_30": 2,
+    "excised_50": 11
+  },
+  "Intermediate (L4--L7)": {
+    "total_heads": 48,
+    "excised_30": 19,
+    "excised_50": 28
+  },
+  "Deep (L8--L11)": {
+    "total_heads": 48,
+    "excised_30": 22,
+    "excised_50": 33
+  },
+  "excised_30_total": 43,
+  "excised_50_total": 72
+}

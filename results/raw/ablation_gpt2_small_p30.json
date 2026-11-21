@@ -1,0 +1,110 @@
+{
+  "model_key": "gpt2_small",
+  "ratio": 0.3,
+  "num_lambada": 250,
+  "random_seeds": [
+    13,
+    29,
+    47,
+    61,
+    83
+  ],
+  "results": {
+    "taylor": {
+      "per_seed": [
+        {
+          "seed": 0,
+          "wikitext_ppl": 55.69531210388209,
+          "lambada_top1": 0.24,
+          "lambada_full_word_acc": 0.232,
+          "latency_ms_per_token": 14.047377708326772
+        }
+      ],
+      "wikitext_ppl_mean": 55.69531210388209,
+      "wikitext_ppl_std": 0.0,
+      "lambada_top1_mean": 0.24,
+      "lambada_top1_std": 0.0,
+      "latency_mean": 14.047377708326772,
+      "latency_std": 0.0
+    },
+    "fisher": {
+      "per_seed": [
+        {
+          "seed": 0,
+          "wikitext_ppl": 55.37969311285267,
+          "lambada_top1": 0.236,
+          "lambada_full_word_acc": 0.232,
+          "latency_ms_per_token": 14.673163458307195
+        }
+      ],
+      "wikitext_ppl_mean": 55.37969311285267,
+      "wikitext_ppl_std": 0.0,
+      "lambada_top1_mean": 0.236,
+      "lambada_top1_std": 0.0,
+      "latency_mean": 14.673163458307195,
+      "latency_std": 0.0
+    },
+    "weight_norm_l2": {
+      "per_seed": [
+        {
+          "seed": 0,
+          "wikitext_ppl": 641.1694072183328,
+          "lambada_top1": 0.016,
+          "lambada_full_word_acc": 0.016,
+          "latency_ms_per_token": 15.526481924977514
+        }
+      ],
+      "wikitext_ppl_mean": 641.1694072183328,
+      "wikitext_ppl_std": 0.0,
+      "lambada_top1_mean": 0.016,
+      "lambada_top1_std": 0.0,
+      "latency_mean": 15.526481924977514,
+      "latency_std": 0.0
+    },
+    "random": {
+      "per_seed": [
+        {
+          "seed": 13,
+          "wikitext_ppl": 358.4410831699484,
+          "lambada_top1": 0.068,
+          "lambada_full_word_acc": 0.068,
+          "latency_ms_per_token": 14.245233391678388
+        },
+        {
+          "seed": 29,
+          "wikitext_ppl": 210.53935063395045,
+          "lambada_top1": 0.064,
+          "lambada_full_word_acc": 0.06,
+          "latency_ms_per_token": 15.090984749986092
+        },
+        {
+          "seed": 47,
+          "wikitext_ppl": 173.46475325844406,
+          "lambada_top1": 0.088,
+          "lambada_full_word_acc": 0.08,
+          "latency_ms_per_token": 16.093677999985328
+        },
+        {
+          "seed": 61,
+          "wikitext_ppl": 114.32625782407081,
+          "lambada_top1": 0.128,
+          "lambada_full_word_acc": 0.128,
+          "latency_ms_per_token": 14.695753408341261
+        },
+        {
+          "seed": 83,
+          "wikitext_ppl": 497.1248945571089,
+          "lambada_top1": 0.196,
+          "lambada_full_word_acc": 0.192,
+          "latency_ms_per_token": 14.049014908384075
+        }
+      ],
+      "wikitext_ppl_mean": 270.77926788870457,
+      "wikitext_ppl_std": 155.31696890325827,
+      "lambada_top1_mean": 0.10880000000000001,
+      "lambada_top1_std": 0.054947247428783916,
+      "latency_mean": 14.83493289167503,
+      "latency_std": 0.8116010884629711
+    }
+  }
+}

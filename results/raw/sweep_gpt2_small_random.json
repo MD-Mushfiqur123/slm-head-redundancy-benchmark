@@ -1,0 +1,79 @@
+{
+  "model_key": "gpt2_small",
+  "hf_id": "gpt2",
+  "metric": "random",
+  "protocol": {
+    "wikitext_sequences": 200,
+    "ptb_sequences": 100,
+    "stride": 256,
+    "max_length": 512,
+    "num_lambada": 0,
+    "dtype": "fp32-cpu",
+    "kv_scenario": "B=8, T=1024, fp16 bytes"
+  },
+  "rows": [
+    {
+      "pruning_ratio": 0.0,
+      "metric": "random",
+      "wikitext_ppl": 43.618499528855025,
+      "wikitext_ppl_std": 0.0,
+      "ptb_ppl": NaN,
+      "active_heads": 144,
+      "pruned_heads": 0
+    },
+    {
+      "pruning_ratio": 0.1,
+      "metric": "random",
+      "wikitext_ppl": 77.64575253229005,
+      "wikitext_ppl_std": 17.096351891055832,
+      "ptb_ppl": NaN,
+      "active_heads": 130,
+      "pruned_heads": 14
+    },
+    {
+      "pruning_ratio": 0.2,
+      "metric": "random",
+      "wikitext_ppl": 141.73157564354622,
+      "wikitext_ppl_std": 71.43316451762148,
+      "ptb_ppl": NaN,
+      "active_heads": 115,
+      "pruned_heads": 29
+    },
+    {
+      "pruning_ratio": 0.3,
+      "metric": "random",
+      "wikitext_ppl": 272.36030148049804,
+      "wikitext_ppl_std": 142.91791452161718,
+      "ptb_ppl": NaN,
+      "active_heads": 101,
+      "pruned_heads": 43
+    },
+    {
+      "pruning_ratio": 0.4,
+      "metric": "random",
+      "wikitext_ppl": 543.5840416630647,
+      "wikitext_ppl_std": 505.76241397462917,
+      "ptb_ppl": NaN,
+      "active_heads": 86,
+      "pruned_heads": 58
+    },
+    {
+      "pruning_ratio": 0.5,
+      "metric": "random",
+      "wikitext_ppl": 496.0483906445588,
+      "wikitext_ppl_std": 261.12803307658,
+      "ptb_ppl": NaN,
+      "active_heads": 72,
+      "pruned_heads": 72
+    },
+    {
+      "pruning_ratio": 0.6,
+      "metric": "random",
+      "wikitext_ppl": 673.7018656876704,
+      "wikitext_ppl_std": 298.70647508178143,
+      "ptb_ppl": NaN,
+      "active_heads": 58,
+      "pruned_heads": 86
+    }
+  ]
+}

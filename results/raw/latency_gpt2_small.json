@@ -1,0 +1,100 @@
+{
+  "model_key": "gpt2_small",
+  "prefill_len": 256,
+  "decode_steps": 32,
+  "batch_sizes": {
+    "unpruned": {
+      "1": {
+        "decode_ms_per_token": 18.366132339273072,
+        "decode_std": 1.1072017881167342,
+        "prefill_ms": 40.23653257068612,
+        "prefill_std": 10.541865947680186,
+        "decode_steps": 32
+      },
+      "4": {
+        "decode_ms_per_token": 27.71776484377954,
+        "decode_std": 1.1992599707119982,
+        "prefill_ms": 67.95524371461526,
+        "prefill_std": 11.09830526616469,
+        "decode_steps": 32
+      },
+      "8": {
+        "decode_ms_per_token": 38.55734958928484,
+        "decode_std": 0.4750436974809559,
+        "prefill_ms": 92.27033185743494,
+        "prefill_std": 1.7847112342887412,
+        "decode_steps": 32
+      }
+    },
+    "pruned_30": {
+      "1": {
+        "decode_ms_per_token": 15.028472950884211,
+        "decode_std": 0.5850521804587383,
+        "prefill_ms": 33.75674585809715,
+        "prefill_std": 9.541821785342469,
+        "decode_steps": 32
+      },
+      "4": {
+        "decode_ms_per_token": 26.555913924117444,
+        "decode_std": 0.6460679930515599,
+        "prefill_ms": 65.0826687144997,
+        "prefill_std": 10.1534741111008,
+        "decode_steps": 32
+      },
+      "8": {
+        "decode_ms_per_token": 34.2996439330331,
+        "decode_std": 0.3906741963269876,
+        "prefill_ms": 80.03403214128672,
+        "prefill_std": 10.946635818886083,
+        "decode_steps": 32
+      }
+    }
+  },
+  "kv_cache_curves": {
+    "seq_lengths": [
+      128,
+      256,
+      512,
+      768,
+      1024,
+      2048
+    ],
+    "unpruned": {
+      "analytical_mb": [
+        36.0,
+        72.0,
+        144.0,
+        216.0,
+        288.0,
+        576.0
+      ],
+      "empirical_peak_rss_mb": [
+        19.30859375,
+        47.01171875,
+        114.52734375,
+        190.3125,
+        252.83203125,
+        null
+      ]
+    },
+    "pruned_30": {
+      "analytical_mb": [
+        24.0,
+        48.0,
+        96.0,
+        144.0,
+        192.0,
+        384.0
+      ],
+      "empirical_peak_rss_mb": [
+        11.31640625,
+        31.56640625,
+        83.96875,
+        137.65625,
+        181.4921875,
+        null
+      ]
+    }
+  },
+  "peak_rss_mb_total": 1752.5546875
+}

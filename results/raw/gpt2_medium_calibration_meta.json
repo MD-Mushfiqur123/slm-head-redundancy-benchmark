@@ -1,0 +1,12 @@
+{
+  "model_key": "gpt2_medium",
+  "hf_id": "gpt2-medium",
+  "num_layers": 24,
+  "num_heads": 16,
+  "d_model": 1024,
+  "d_head": 64,
+  "num_calibration_sequences": 150,
+  "num_calibration_tokens": 57600,
+  "params_millions": 354.823,
+  "calibration_seconds": 1471.8713777310004
+}

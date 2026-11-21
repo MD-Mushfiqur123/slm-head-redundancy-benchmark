@@ -1,0 +1,31 @@
+name: PPL Regression Guard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install CPU torch
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        env:
+          HF_HUB_ENABLE_HF_TRANSFER: "0"
+      - name: Regression check (GPT-2 Small, reduced protocol)
+        run: |
+          python scripts/run_calibration.py --model gpt2_small --num-calibration 24
+          python scripts/run_sweep.py --model gpt2_small --metric taylor \
+            --ratios 0.0 0.3 --lambada --num-lambada 24 --num-calibration 24 \
+            --latency-repeats 2
+        env:
+          HF_HUB_ENABLE_HF_TRANSFER: "0"
+      - name: Verify PPL drift vs. baseline
+        run: python scripts/check_regression.py --max-drift 0.5

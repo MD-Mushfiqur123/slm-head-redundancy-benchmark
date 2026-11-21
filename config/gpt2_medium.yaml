@@ -1,0 +1,11 @@
+model_key: gpt2_medium
+hf_id: gpt2-medium
+arch_family: gpt2
+num_layers: 24
+num_heads: 16
+num_kv_heads: 16
+d_model: 1024
+d_head: 64
+position_strategy: absolute
+norm_style: post_ln
+activation: gelu_new

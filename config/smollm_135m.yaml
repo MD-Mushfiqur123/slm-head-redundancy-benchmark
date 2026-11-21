@@ -1,0 +1,11 @@
+model_key: smollm_135m
+hf_id: HuggingFaceTB/SmolLM-135M
+arch_family: llama
+num_layers: 30
+num_heads: 9
+num_kv_heads: 3
+d_model: 576
+d_head: 64
+position_strategy: rope
+norm_style: pre_rmsnorm
+activation: swiglu

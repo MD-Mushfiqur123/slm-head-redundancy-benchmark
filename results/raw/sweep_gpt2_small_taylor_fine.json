@@ -1,0 +1,100 @@
+{
+  "model_key": "gpt2_small",
+  "hf_id": "gpt2",
+  "metric": "taylor",
+  "protocol": {
+    "wikitext_sequences": 200,
+    "ptb_sequences": 100,
+    "stride": 256,
+    "max_length": 512,
+    "num_lambada": 0,
+    "dtype": "fp32-cpu",
+    "kv_scenario": "B=8, T=1024, fp16 bytes"
+  },
+  "rows": [
+    {
+      "pruning_ratio": 0.02,
+      "metric": "taylor",
+      "active_heads": 141,
+      "pruned_heads": 3,
+      "wikitext_ppl": 36.84381048612823,
+      "wikitext_total_tokens": 102200,
+      "wikitext_eval_seconds": 95.30807661700237,
+      "ptb_ppl": 61.92794768059877,
+      "latency_ms_per_token": 17.141224097233337,
+      "latency_std_ms_per_token": 0.8608902954281705,
+      "kv_cache_mb_B8_T1024": 264.0,
+      "kv_cache_unpruned_mb_B8_T1024": 288.0,
+      "kv_active_groups_per_layer": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        10,
+        12,
+        12,
+        12,
+        11
+      ]
+    },
+    {
+      "pruning_ratio": 0.05,
+      "metric": "taylor",
+      "active_heads": 137,
+      "pruned_heads": 7,
+      "wikitext_ppl": 37.51208717106786,
+      "wikitext_total_tokens": 102200,
+      "wikitext_eval_seconds": 96.62020601400218,
+      "ptb_ppl": 63.09122479026704,
+      "latency_ms_per_token": 14.956769875021159,
+      "latency_std_ms_per_token": 0.7264694378902035,
+      "kv_cache_mb_B8_T1024": 264.0,
+      "kv_cache_unpruned_mb_B8_T1024": 288.0,
+      "kv_active_groups_per_layer": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        11,
+        9,
+        12,
+        11,
+        11,
+        11
+      ]
+    },
+    {
+      "pruning_ratio": 0.08,
+      "metric": "taylor",
+      "active_heads": 132,
+      "pruned_heads": 12,
+      "wikitext_ppl": 38.57243007754969,
+      "wikitext_total_tokens": 102200,
+      "wikitext_eval_seconds": 94.95807386999877,
+      "ptb_ppl": 64.73616334470638,
+      "latency_ms_per_token": 14.46708748618322,
+      "latency_std_ms_per_token": 0.723469297514585,
+      "kv_cache_mb_B8_T1024": 264.0,
+      "kv_cache_unpruned_mb_B8_T1024": 288.0,
+      "kv_active_groups_per_layer": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        11,
+        8,
+        12,
+        10,
+        10,
+        9
+      ]
+    }
+  ]
+}

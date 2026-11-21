@@ -1,0 +1,12 @@
+{
+  "model_key": "smollm_135m",
+  "hf_id": "HuggingFaceTB/SmolLM-135M",
+  "num_layers": 30,
+  "num_heads": 9,
+  "d_model": 576,
+  "d_head": 64,
+  "num_calibration_sequences": 150,
+  "num_calibration_tokens": 76800,
+  "params_millions": 134.515,
+  "calibration_seconds": 269.77961457200036
+}

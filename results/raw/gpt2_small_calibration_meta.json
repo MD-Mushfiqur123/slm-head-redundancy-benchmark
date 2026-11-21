@@ -1,0 +1,12 @@
+{
+  "model_key": "gpt2_small",
+  "hf_id": "gpt2",
+  "num_layers": 12,
+  "num_heads": 12,
+  "d_model": 768,
+  "d_head": 64,
+  "num_calibration_sequences": 150,
+  "num_calibration_tokens": 76800,
+  "params_millions": 124.44,
+  "calibration_seconds": 213.44362347199967
+}
