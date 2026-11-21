@@ -74,6 +74,15 @@ python scripts/gpu_extension.py --model gpt2_small --ratio 0.30
 python scripts/gpu_extension.py --model smollm_135m --ratio 0.055556
 ```
 
+The registry now covers **seven sub-billion architectures**, spanning four parameter
+families: GPT-2 Small/Medium (Post-LN, absolute), **SmolLM-135M** (LLaMA family,
+RoPE, SwiGLU, GQA group 3), **OPT-125M** (pre-LN, learned positions),
+**Pythia-160m/410m** (GPT-NeoX, RoPE, fused interleaved QKV with dedicated
+physical surgery), and **Qwen2.5-0.5B** (RoPE, SwiGLU, GQA group 7). GQA models
+take a group-aligned ratio (e.g. `--ratio 0.291667` for Qwen2.5-0.5B; 0.30 for
+SmolLM). Run the whole matrix sequentially with `--model all` (resumable via the
+per-stage artifacts, so an interrupted run loses only the current stage).
+
 All stages carry per-model/per-ratio caches in `results/raw/` (`--force` recomputes).
 
 Everything the notebook prints is measured on the runtime (/TRUTH law); results land in

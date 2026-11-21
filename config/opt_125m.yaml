@@ -1,0 +1,11 @@
+model_key: opt_125m
+hf_id: facebook/opt-125m
+arch_family: opt
+num_layers: 12
+num_heads: 12
+num_kv_heads: 12
+d_model: 768
+d_head: 64
+position_strategy: learned
+norm_style: pre_ln
+activation: relu

@@ -23,7 +23,23 @@ class WeightNormScorer:
         for li, sl in enumerate(slicing):
             for h in range(nh):
                 total = 0.0
-                if sl.is_conv1d:
+                if sl.fused_qkv:
+                    w = sl.qkv_param.weight.detach().float()  # [3d, d] interleaved
+                    for key in ("q", "k", "v"):
+                        total += float(
+                            torch.linalg.vector_norm(
+                                w[sl.layout[h][key], :], ord=self.order
+                            )
+                            ** self.order
+                        )
+                    wo = sl.o_proj.weight.detach().float()    # [out, in]
+                    total += float(
+                        torch.linalg.vector_norm(
+                            wo[:, sl.layout[h]["q"]], ord=self.order
+                        )
+                        ** self.order
+                    )
+                elif sl.is_conv1d:
                     w = sl.qkv_param.weight.detach().float()  # [d, 3d]
                     for key in ("q", "k", "v"):
                         total += float(

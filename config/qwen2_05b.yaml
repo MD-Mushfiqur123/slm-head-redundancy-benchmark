@@ -1,0 +1,11 @@
+model_key: qwen2_05b
+hf_id: Qwen/Qwen2.5-0.5B
+arch_family: llama
+num_layers: 24
+num_heads: 14
+num_kv_heads: 2
+d_model: 896
+d_head: 64
+position_strategy: rope
+norm_style: pre_rmsnorm
+activation: swiglu

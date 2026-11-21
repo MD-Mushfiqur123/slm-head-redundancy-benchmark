@@ -1,0 +1,11 @@
+model_key: pythia_160m
+hf_id: EleutherAI/pythia-160m
+arch_family: gpt_neox
+num_layers: 12
+num_heads: 12
+num_kv_heads: 12
+d_model: 768
+d_head: 64
+position_strategy: rope
+norm_style: pre_ln
+activation: gelu

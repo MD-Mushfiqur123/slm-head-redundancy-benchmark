@@ -71,9 +71,65 @@ SMOLLM_135M = ModelSpec(
     activation="swiglu",
     norm_style="pre_rmsnorm",
 )
+OPT_125M = ModelSpec(
+    key="opt_125m",
+    hf_id="facebook/opt-125m",
+    num_layers=12,
+    num_heads=12,
+    num_kv_heads=12,
+    d_model=768,
+    d_head=64,
+    arch_family="opt",
+    position_strategy="learned",
+    activation="relu",
+    norm_style="pre_ln",
+)
+PYTHIA_160M = ModelSpec(
+    key="pythia_160m",
+    hf_id="EleutherAI/pythia-160m",
+    num_layers=12,
+    num_heads=12,
+    num_kv_heads=12,
+    d_model=768,
+    d_head=64,
+    arch_family="gpt_neox",
+    position_strategy="rope",
+    activation="gelu",
+    norm_style="pre_ln",
+)
+PYTHIA_410M = ModelSpec(
+    key="pythia_410m",
+    hf_id="EleutherAI/pythia-410m",
+    num_layers=24,
+    num_heads=16,
+    num_kv_heads=16,
+    d_model=1024,
+    d_head=64,
+    arch_family="gpt_neox",
+    position_strategy="rope",
+    activation="gelu",
+    norm_style="pre_ln",
+)
+QWEN2_05B = ModelSpec(
+    key="qwen2_05b",
+    hf_id="Qwen/Qwen2.5-0.5B",
+    num_layers=24,
+    num_heads=14,
+    num_kv_heads=2,
+    d_model=896,
+    d_head=64,
+    arch_family="llama",
+    position_strategy="rope",
+    activation="swiglu",
+    norm_style="pre_rmsnorm",
+)
 
 MODEL_REGISTRY: Dict[str, ModelSpec] = {
-    spec.key: spec for spec in (GPT2_SMALL, GPT2_MEDIUM, SMOLLM_135M)
+    spec.key: spec
+    for spec in (
+        GPT2_SMALL, GPT2_MEDIUM, SMOLLM_135M,
+        OPT_125M, PYTHIA_160M, PYTHIA_410M, QWEN2_05B,
+    )
 }
 
 
@@ -93,6 +149,7 @@ class AttentionSlicing:
         qkv_param: the fused or separate QKV parameter module, or None.
         qkv_layout: mapping head index -> {'q': (col_range), 'k': ..., 'v': ...}
         is_conv1d: True when o_proj/qkv params store weights as (in, out).
+        fused_qkv: True when qkv_param is a single interleaved GPT-NeoX module.
     """
 
     o_proj: nn.Module
@@ -103,6 +160,7 @@ class AttentionSlicing:
     qkv_param: Optional[nn.Module]
     layout: List[Dict[str, Optional[slice]]]
     attn_module: Optional[nn.Module] = None
+    fused_qkv: bool = False
 
 
 def _gpt2_head_slices(layer: nn.Module) -> AttentionSlicing:
@@ -134,9 +192,10 @@ def _gpt2_head_slices(layer: nn.Module) -> AttentionSlicing:
 def _llama_head_slices(layer: nn.Module) -> AttentionSlicing:
     attn = layer.self_attn
     nh = attn.config.num_attention_heads
-    nkv = attn.config.num_key_value_heads
+    nkv = getattr(attn.config, "num_key_value_heads", None) or nh
     dk = attn.head_dim
     qkv = {"q": attn.q_proj, "k": attn.k_proj, "v": attn.v_proj}
+    o_proj = attn.o_proj if hasattr(attn, "o_proj") else attn.out_proj
 
     def col_slice(head: int) -> slice:
         return slice(head * dk, (head + 1) * dk)
@@ -156,7 +215,7 @@ def _llama_head_slices(layer: nn.Module) -> AttentionSlicing:
             }
         )
     return AttentionSlicing(
-        o_proj=attn.o_proj,
+        o_proj=o_proj,
         d_head=dk,
         num_heads=nh,
         num_kv_heads=nkv,
@@ -167,15 +226,57 @@ def _llama_head_slices(layer: nn.Module) -> AttentionSlicing:
     )
 
 
+def _gpt_neox_head_slices(layer: nn.Module) -> AttentionSlicing:
+    """Head slicing for GPT-NeoX (Pythia): a single fused QKV Linear whose
+    rows are per-head interleaved blocks of [q k v], each of size d_head.
+    Pythia has no GQA, so each query head owns its own K/V row block."""
+    attn = layer.attention
+    nh = attn.config.num_attention_heads
+    nkv = getattr(attn.config, "num_key_value_heads", None) or nh
+    if nkv != nh:
+        raise ValueError("fused GPT-NeoX slicing assumes full MHA (no GQA)")
+    dk = attn.head_size
+    layout = [
+        {
+            "q": slice(h * 3 * dk, (h * 3 + 1) * dk),
+            "k": slice((h * 3 + 1) * dk, (h * 3 + 2) * dk),
+            "v": slice((h * 3 + 2) * dk, (h + 1) * 3 * dk),
+        }
+        for h in range(nh)
+    ]
+    return AttentionSlicing(
+        o_proj=attn.dense,
+        d_head=dk,
+        num_heads=nh,
+        num_kv_heads=nkv,
+        is_conv1d=False,
+        qkv_param=attn.query_key_value,
+        layout=layout,
+        attn_module=attn,
+        fused_qkv=True,
+    )
+
+
 def locate_layers(model: nn.Module) -> List[nn.Module]:
-    """Return the ordered decoder layer list for either architecture."""
+    """Return the ordered decoder layer list for any supported architecture:
+    GPT-2 (transformer.h), GPT-NeoX/Pythia (gpt_neox.layers), LLaMA family
+    (model.layers) and OPT (model.decoder.layers)."""
     if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
         return list(model.transformer.h)
-    if hasattr(model, "model") and hasattr(model.model, "layers"):
-        return list(model.model.layers)
+    if hasattr(model, "gpt_neox") and hasattr(model.gpt_neox, "layers"):
+        return list(model.gpt_neox.layers)
+    if hasattr(model, "model"):
+        inner = model.model
+        if hasattr(inner, "layers"):
+            return list(inner.layers)
+        if hasattr(inner, "decoder") and hasattr(inner.decoder, "layers"):
+            return list(inner.decoder.layers)
     if hasattr(model, "layers"):
         return list(model.layers)
-    raise ValueError("Unrecognised decoder hierarchy: no transformer.h / model.layers")
+    raise ValueError(
+        "Unrecognised decoder hierarchy: no transformer.h / gpt_neox.layers "
+        "/ model.layers / model.decoder.layers"
+    )
 
 
 def locate_attentions(model: nn.Module) -> List[AttentionSlicing]:
@@ -184,7 +285,10 @@ def locate_attentions(model: nn.Module) -> List[AttentionSlicing]:
     first = layers[0]
     if hasattr(first, "attn") and hasattr(first.attn, "c_proj"):
         return [_gpt2_head_slices(layer) for layer in layers]
-    if hasattr(first, "self_attn"):
+    layer_attn = getattr(first, "self_attn", None) or getattr(first, "attention", None)
+    if layer_attn is not None and hasattr(layer_attn, "query_key_value"):
+        return [_gpt_neox_head_slices(layer) for layer in layers]
+    if layer_attn is not None and hasattr(layer_attn, "k_proj"):
         return [_llama_head_slices(layer) for layer in layers]
     raise ValueError("Unrecognised attention module structure")
 

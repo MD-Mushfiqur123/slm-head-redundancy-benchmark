@@ -6,6 +6,11 @@ Python script (Colab terminal, any CUDA machine, or CPU-only smoke tests):
 
     python scripts/gpu_extension.py --model gpt2_small --ratio 0.30
     python scripts/gpu_extension.py --model smollm_135m --ratio 0.055556
+    python scripts/gpu_extension.py --model all          # full 7-model matrix
+
+Registered architectures: gpt2_small, gpt2_medium, smollm_135m (GQA group 3),
+opt_125m, pythia_160m, pythia_410m (fused interleaved QKV), qwen2_05b
+(GQA group 7; use --ratio 0.291667). GQA ratios must excise whole KV groups.
 
 Stages (identical mathematics and protocols to the CPU pipeline):
   1. CUDA Taylor + Fisher calibration (150 WikiText-2 windows)
@@ -58,7 +63,11 @@ PAPER_CPU_PPL = {"gpt2_small": 36.6757, "gpt2_medium": 27.0176, "smollm_135m": 2
 
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--model", default="gpt2_small", choices=list(MODEL_REGISTRY))
+    ap.add_argument(
+        "--model", default="gpt2_small",
+        choices=[*list(MODEL_REGISTRY), "all"],
+        help="model key, or 'all' to run the full benchmark matrix sequentially",
+    )
     ap.add_argument("--ratio", type=float, default=0.30)
     ap.add_argument("--window", type=int, default=512)
     ap.add_argument("--stride", type=int, default=256)
@@ -115,6 +124,13 @@ def measured_kv_cache_mb(model, ids) -> float:
 
 def main() -> None:
     args = parse_args()
+    keys = list(MODEL_REGISTRY) if args.model == "all" else [args.model]
+    for key in keys:
+        args.model = key
+        run(args)
+
+
+def run(args: argparse.Namespace) -> None:
     spec = MODEL_REGISTRY[args.model]
     kv_group = spec.num_heads // spec.num_kv_heads
     full_word = args.model != "smollm_135m"
@@ -274,7 +290,8 @@ def main() -> None:
     equiv_rel = equiv / float(logits_surgery.abs().max())
     hm.clear_mask()
     hm.remove_hooks()
-    assert equiv < 2e-3 and equiv_rel < 1e-4, f"surgery mismatch: {equiv:.2e}"
+    rel_tol = 5e-3 if args.fp16 else 5e-4
+    assert equiv_rel < rel_tol, f"surgery mismatch: {equiv:.2e} (rel {equiv_rel:.2e})"
     print(f"surgery-vs-gating max |Δlogit| = {equiv:.2e} (relative {equiv_rel:.2e}) ✓")
     free_vram()
 

@@ -61,6 +61,8 @@ def excise_heads(
             continue
         if sl.is_conv1d:
             _excise_gpt2_layer(sl, keep)
+        elif sl.fused_qkv:
+            _excise_neox_layer(sl, keep)
         else:
             _excise_llama_layer(sl, keep)
 
@@ -108,6 +110,42 @@ def _excise_gpt2_layer(sl: AttentionSlicing, keep: list) -> None:
     attn.num_heads = len(keep)
     attn.head_dim = dk
     attn.embed_dim = attn.split_size
+
+
+def _excise_neox_layer(sl: AttentionSlicing, keep: list) -> None:
+    """GPT-NeoX (Pythia): fused query_key_value Linear with per-head
+    interleaved row blocks of [q k v]; dense output projection [d, d]."""
+    qkv = sl.qkv_param            # nn.Linear: weight [3*d, d]
+    out = sl.o_proj               # nn.Linear: weight [d, d]
+    dk = sl.d_head
+    dev = out.weight.device
+    dt = out.weight.dtype
+
+    if not keep:
+        _replace_parameter(out, "weight", torch.zeros_like(out.weight.detach()))
+        if out.bias is not None:
+            _replace_parameter(out, "bias", torch.zeros_like(out.bias.detach()))
+        return
+
+    keep_rows = torch.cat(
+        [torch.arange(h * 3 * dk, (h + 1) * 3 * dk, device=dev) for h in keep]
+    )
+    new_w = qkv.weight.detach().index_select(0, keep_rows)
+    _replace_parameter(qkv, "weight", new_w.to(dt))
+    if qkv.bias is not None:
+        new_b = qkv.bias.detach().index_select(0, keep_rows)
+        _replace_parameter(qkv, "bias", new_b.to(dt))
+
+    keep_cols = torch.cat(
+        [torch.arange(h * dk, (h + 1) * dk, device=dev) for h in keep]
+    )
+    new_o = out.weight.detach().index_select(1, keep_cols)
+    _replace_parameter(out, "weight", new_o.to(dt))
+
+    attn = sl.attn_module
+    attn.head_size = dk
+    if hasattr(attn, "num_heads"):
+        attn.num_heads = len(keep)
 
 
 def _excise_llama_layer(sl: AttentionSlicing, keep: list) -> None:
