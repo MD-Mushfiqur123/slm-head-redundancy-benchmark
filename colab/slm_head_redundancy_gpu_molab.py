@@ -230,5 +230,120 @@ def _(mo, os, ratio, model_key):
     return
 
 
+@app.cell
+def _(mo):
+    FT_MODEL = mo.ui.dropdown(
+        options=[
+            "gpt2_small", "gpt2_medium", "smollm_135m",
+            "opt_125m", "pythia_160m", "pythia_410m", "qwen2_05b",
+        ],
+        value="gpt2_small",
+        label="repayment model",
+    )
+    FT_RATIOS = mo.ui.text(
+        value="0.1 0.2 0.3 0.4",
+        label="excision ratios (space-separated; GQA models auto-snap)",
+    )
+    FT_EPOCHS = mo.ui.number(value=2, start=1, stop=10, label="fine-tune epochs")
+    FT_WINDOWS = mo.ui.number(
+        value=2000, start=100, step=100, label="train windows (512 tok each)")
+    FT_LR = mo.ui.text(value="1e-5", label="AdamW lr")
+    FT_RUN = mo.ui.run_button(label="▶️ Run C — fine-tuning repayment (~30–90 min)")
+    mo.vstack([mo.md(
+        "### 💰 Fine-tuning repayment\n\n"
+        "GQA-safe surgery → AdamW fine-tune → pre/post-repayment PPL "
+        "+ repair-% per ratio. Everything measured at runtime (/TRUTH)."
+    ), FT_MODEL, FT_RATIOS, FT_EPOCHS, FT_WINDOWS, FT_LR, FT_RUN])
+    return FT_EPOCHS, FT_LR, FT_MODEL, FT_RUN, FT_RATIOS, FT_WINDOWS
+
+
+@app.cell
+def _(
+    FT_EPOCHS, FT_LR, FT_MODEL, FT_RUN, FT_RATIOS, FT_WINDOWS, mo, os, subprocess, sys,
+):
+    mo.stop(
+        not FT_RUN.value,
+        "Repayment-এর বোতামে ক্লিক করলে রান শুরু হবে "
+        "(ratios পেইন, ফাইনটাইন, ঘণ্টাঘণ্টি লেগে)।",
+    )
+    ft_model_key = FT_MODEL.value
+    _ratios = " ".join(FT_RATIOS.value.split()) or "0.3"
+    try:
+        _lr = str(float(FT_LR.value))
+    except ValueError:
+        raise ValueError(f"--lr must parse as float, got {FT_LR.value!r}")
+    _cmd = [
+        sys.executable, "scripts/finetune_repayment.py",
+        "--model", ft_model_key,
+        "--ratios", *_ratios.split(),
+        "--epochs", str(int(FT_EPOCHS.value)),
+        "--train-windows", str(int(FT_WINDOWS.value)),
+        "--lr", _lr,
+    ]
+    _proc = subprocess.run(
+        _cmd, capture_output=True, text=True,
+        cwd=os.path.abspath("slm-head-redundancy-benchmark"),
+    )
+    _log = mo.accordion(
+        {"full repayment log": (_proc.stdout[-20000:] + "\n" + _proc.stderr[-4000:])}
+    )
+    if _proc.returncode != 0:
+        raise RuntimeError(
+            f"finetune_repayment.py exited {_proc.returncode}\n{_proc.stderr[-2000:]}"
+        )
+    mo.vstack([mo.md("## ✅ পুনঃশোধন রান শেষ — নিচে ফলাফল ও ডাউনলোড"), _log])
+    return (ft_model_key,)
+
+
+@app.cell
+def _(json, mo, os, ft_model_key):
+    _res_path = os.path.join(
+        "slm-head-redundancy-benchmark", "results/raw",
+        f"repayment_{ft_model_key}.json",
+    )
+    if os.path.exists(_res_path):
+        _res = json.load(open(_res_path))
+        _tbl = (
+            "| ratio | pre-repayment PPL | post-repayment PPL | ΔPPL after | repair % | FT seconds |\n"
+            "|---|---|---|---|---|---|\n"
+            + "\n".join(
+                f"| {100*r['ratio']:.0f}% | {r['pre_ppl']:.4f} | {r['post_ppl']:.4f} "
+                f"| {r['post_delta_pct']:+.2f}% | {r['repair_pct']:.1f}% "
+                f"| {r['ft_seconds']:.1f} |"
+                for r in _res["rows"]
+            )
+        )
+        _ = mo.md(
+            f"## 📊 Repayment table — {ft_model_key}\n\n"
+            f"unpruned PPL (base): {_res['unpruned_ppl']:.4f}\n\n{_tbl}"
+        )
+    else:
+        _ = mo.md("পুনঃশোধনের আর্টিফ্যাক্ট নেই — আগে রান করো।")
+    return
+
+
+@app.cell
+def _(mo, os, ft_model_key):
+    _files = []
+    for _p in (
+        os.path.join("slm-head-redundancy-benchmark", "results/raw",
+                     f"repayment_{ft_model_key}.json"),
+        os.path.join("slm-head-redundancy-benchmark",
+                     f"repayment_{ft_model_key}.csv"),
+    ):
+        if os.path.exists(_p):
+            _files.append(_p)
+    _cards = []
+    for _p in _files:
+        with open(_p, "rb") as _fh:
+            _cards.append(
+                mo.download(data=_fh.read(), filename=os.path.basename(_p))
+            )
+    _header = mo.md("### 📥 download repayment artifacts")
+    _empty = mo.md("\u0995\u09cb\u09a8\u09cb artifact \u09a8\u09c7\u07a5\u0965")
+    _ = mo.vstack([_header] + _cards if _cards else _empty)
+    return
+
+
 if __name__ == "__main__":
     app.run()

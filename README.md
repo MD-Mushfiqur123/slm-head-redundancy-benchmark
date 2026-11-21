@@ -79,6 +79,10 @@ Toggle the GPU in the notebook-specs button, pick a model (all seven are in the 
 plus `all` for the full matrix), and press Run. The marimo app clones this repository,
 installs requirements, drives the same measured `/TRUTH` pipeline
 (`scripts/gpu_extension.py`), and offers the JSON artifacts and PNG figures for download.
+The notebook also carries a built-in **Run C — fine-tuning repayment** section
+(pick model, ratios, epochs, train windows and press the button; it drives
+`scripts/finetune_repayment.py` and renders the pre/post-repayment table with
+download buttons).
 
 Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standalone CLI:
 
