@@ -171,39 +171,55 @@ def _(
 
 
 @app.cell
-def _(json, mo, os, REPO_DIR, ft_model_key):
-    ft_json_path = os.path.join(REPO_DIR, "results/raw", f"repayment_{ft_model_key}.json")
-    ft_csv_path = os.path.join(REPO_DIR, f"repayment_{ft_model_key}.csv")
-    if os.path.exists(ft_json_path):
-        _res = json.load(open(ft_json_path))
+def _(json, mo, os, REPO_DIR):
+    _mds = []
+    _raw = os.path.join(REPO_DIR, "results", "raw")
+    _jsons = sorted(
+        f for f in os.listdir(_raw)
+        if f.startswith("repayment_") and f.endswith(".json")
+    ) if os.path.isdir(_raw) else []
+    for _name in _jsons:
+        with open(os.path.join(_raw, _name)) as _fh:
+            _res = json.load(_fh)
         _rows = [
             f"| {100 * r['ratio']:.0f}% | {r['pre_ppl']:.4f} | {r['post_ppl']:.4f} "
             f"| {r['post_delta_pct']:+.2f}% | {r['repair_pct']:.1f}% "
             f"| {r['ft_seconds']:.1f} |"
             for r in _res["rows"]
         ]
-        _ = mo.md(
-            f"### 📊 Repayment table — {ft_model_key}\n\n"
-            f"unpruned PPL (base): {_res['unpruned_ppl']:.4f}\n\n"
-            "| ratio | pre-repayment PPL | post-repayment PPL | ΔPPL after | repair % | FT seconds |\n"
-            "|---|---|---|---|---|---|\n" + "\n".join(_rows)
+        _mds.append(
+            mo.md(
+                f"### 📊 Repayment table — {_res['model']}\n\n"
+                f"unpruned PPL (base): {_res['unpruned_ppl']:.4f}\n\n"
+                "| ratio | pre-repayment PPL | post-repayment PPL | ΔPPL after | repair % | FT seconds |\n"
+                "|---|---|---|---|---|---|\n" + "\n".join(_rows)
+            )
         )
-    else:
-        _ = mo.md("আর্টিফ্যাক্ট নেই — আগে Run C করো।")
-    return ft_csv_path, ft_json_path
+    _ = mo.vstack(
+        _mds if _mds else [mo.md("আর্টিফ্যাক্ট নেই — আগে Run C করো।")]
+    )
+    return
 
 
 @app.cell
-def _(ft_csv_path, ft_json_path, mo, os):
+def _(mo, os, REPO_DIR):
     _cards = []
-    for _p in (ft_json_path, ft_csv_path):
-        if os.path.exists(_p):
+    _raw = os.path.join(REPO_DIR, "results", "raw")
+    for _root in (_raw, REPO_DIR):
+        if not os.path.isdir(_root):
+            continue
+        for _name in sorted(
+            f for f in os.listdir(_root)
+            if f.startswith("repayment_")
+            and (f.endswith(".json") or f.endswith(".csv"))
+        ):
+            _p = os.path.join(_root, _name)
             with open(_p, "rb") as _fh:
                 _cards.append(
                     mo.download(data=_fh.read(), filename=os.path.basename(_p))
                 )
     _ = mo.vstack(
-        [mo.md("### 📥 Run C artifacts")] + _cards
+        [mo.md("### 📥 Run C artifacts (সব মডেল)")] + _cards
         if _cards else [mo.md("কোনো artifact নেই।")]
     )
     return

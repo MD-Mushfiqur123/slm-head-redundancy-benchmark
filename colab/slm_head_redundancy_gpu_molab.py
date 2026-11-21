@@ -296,13 +296,17 @@ def _(
 
 
 @app.cell
-def _(json, mo, os, ft_model_key):
-    _res_path = os.path.join(
-        "slm-head-redundancy-benchmark", "results/raw",
-        f"repayment_{ft_model_key}.json",
-    )
-    if os.path.exists(_res_path):
-        _res = json.load(open(_res_path))
+def _(json, mo, os):
+    _repo = "slm-head-redundancy-benchmark"
+    _raw = os.path.join(_repo, "results", "raw")
+    _jsons = sorted(
+        f for f in os.listdir(_raw)
+        if f.startswith("repayment_") and f.endswith(".json")
+    ) if os.path.isdir(_raw) else []
+    _mds = []
+    for _name in _jsons:
+        with open(os.path.join(_raw, _name)) as _fh:
+            _res = json.load(_fh)
         _tbl = (
             "| ratio | pre-repayment PPL | post-repayment PPL | ΔPPL after | repair % | FT seconds |\n"
             "|---|---|---|---|---|---|\n"
@@ -313,33 +317,39 @@ def _(json, mo, os, ft_model_key):
                 for r in _res["rows"]
             )
         )
-        _ = mo.md(
-            f"## 📊 Repayment table — {ft_model_key}\n\n"
-            f"unpruned PPL (base): {_res['unpruned_ppl']:.4f}\n\n{_tbl}"
+        _mds.append(
+            mo.md(
+                f"## 📊 Repayment table — {_res['model']}\n\n"
+                f"unpruned PPL (base): {_res['unpruned_ppl']:.4f}\n\n{_tbl}"
+            )
         )
-    else:
-        _ = mo.md("পুনঃশোধনের আর্টিফ্যাক্ট নেই — আগে রান করো।")
+    _ = mo.vstack(
+        _mds if _mds else [mo.md("পুনঃশোধনের আর্টিফ্যাক্ট নেই — আগে রান করো।")]
+    )
     return
 
 
 @app.cell
-def _(mo, os, ft_model_key):
+def _(mo, os):
+    _repo = "slm-head-redundancy-benchmark"
+    _raw = os.path.join(_repo, "results", "raw")
     _files = []
-    for _p in (
-        os.path.join("slm-head-redundancy-benchmark", "results/raw",
-                     f"repayment_{ft_model_key}.json"),
-        os.path.join("slm-head-redundancy-benchmark",
-                     f"repayment_{ft_model_key}.csv"),
-    ):
-        if os.path.exists(_p):
-            _files.append(_p)
+    for _root in (_raw, _repo):
+        if not os.path.isdir(_root):
+            continue
+        for _name in sorted(
+            f for f in os.listdir(_root)
+            if f.startswith("repayment_")
+            and (f.endswith(".json") or f.endswith(".csv"))
+        ):
+            _files.append(os.path.join(_root, _name))
     _cards = []
     for _p in _files:
         with open(_p, "rb") as _fh:
             _cards.append(
                 mo.download(data=_fh.read(), filename=os.path.basename(_p))
             )
-    _header = mo.md("### 📥 download repayment artifacts")
+    _header = mo.md("### 📥 download repayment artifacts (সব মডেল)")
     _empty = mo.md("\u0995\u09cb\u09a8\u09cb artifact \u09a8\u09c7\u07a5\u0965")
     _ = mo.vstack([_header] + _cards if _cards else _empty)
     return
