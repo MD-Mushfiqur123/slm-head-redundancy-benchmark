@@ -26,6 +26,134 @@ def _():
 
 
 @app.cell
+def _(json, mo, os, subprocess, sys):
+    import time
+    AI_REPO_URL = "https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark"
+    AI_REPO = "slm-head-redundancy-benchmark"
+    AI_MODEL = mo.ui.dropdown(
+        options=[
+            "gpt2_small", "gpt2_medium", "smollm_135m",
+            "opt_125m", "pythia_160m", "pythia_410m", "qwen2_05b", "all",
+        ],
+        value="gpt2_small",
+        label="model (all = পূর্ণ ৭-মডেল ম্যাট্রিক্স)",
+    )
+    AI_RATIO = mo.ui.text(value="0.30", label="pruning ratio")
+    AI_FP16 = mo.ui.switch(label="fp16 latency/KV profile", value=True)
+    AI_FORCE = mo.ui.switch(label="force rerun (ক্যাশ বাদ দিয়ে নতুন করে)", value=False)
+    AI_RUN = mo.ui.run_button(
+        label="▶️ ALL-IN-ONE: pull → install → run → results → download"
+    )
+    def _tag(r: float) -> str:
+        return ("%.1f" % (100 * r)).replace(".0", "")
+    _ui = mo.vstack([
+        mo.md(
+            "### 🎯 ALL-IN-ONE — এক সেলেই সব\n\n"
+            "নিচের বোতামটা চাপলে: ① repo pull ② dependency install "
+            "③ পুরো GPU benchmark ④ measured টেবিল ⑤ প্লট ⑥ সব JSON "
+            "ডাউনলোড — অন্য কোনো সেলে হাত দিতে হবে না।"
+        ),
+        AI_MODEL, AI_RATIO, AI_FP16, AI_FORCE, AI_RUN,
+    ])
+    mo.stop(not AI_RUN.value, _ui)
+    _t0 = time.perf_counter()
+
+    if not os.path.isdir(AI_REPO):
+        subprocess.run(["git", "clone", "--depth", "1", AI_REPO_URL, AI_REPO], check=True)
+    else:
+        _pull = subprocess.run(
+            ["git", "-C", AI_REPO, "pull", "--ff-only"], capture_output=True, text=True,
+        )
+        if _pull.returncode != 0:
+            raise RuntimeError(f"git pull failed:\n{_pull.stderr[-2000:]}")
+
+    for _p in ("transformers", "datasets", "matplotlib", "tqdm"):
+        try:
+            __import__(_p)
+        except ImportError:
+            subprocess.run([sys.executable, "-m", "pip", "install", "-q", _p], check=True)
+
+    ai_model_key = AI_MODEL.value
+    ai_ratio = float(AI_RATIO.value)
+    _kv_warn = {"smollm_135m": 3, "qwen2_05b": 7}
+    if ai_model_key in _kv_warn:
+        _g = _kv_warn[ai_model_key]
+        _heads = {"smollm_135m": 270, "qwen2_05b": 336}[ai_model_key]
+        _n = round(_heads * ai_ratio)
+        if _n % _g != 0:
+            _alt = (_n // _g) * _g / _heads
+            raise ValueError(
+                f"{ai_model_key}: ratio {ai_ratio} excises {_n} heads, "
+                f"not a multiple of the KV group {_g}; use e.g. {_alt:.6f}"
+            )
+    ai_cmd = [sys.executable, "scripts/gpu_extension.py", "--model", ai_model_key,
+           "--ratio", repr(ai_ratio)]
+    if AI_FP16.value:
+        ai_cmd.append("--fp16")
+    if AI_FORCE.value:
+        ai_cmd.append("--force")
+    _proc = subprocess.run(
+        ai_cmd, capture_output=True, text=True, cwd=os.path.abspath(AI_REPO),
+    )
+    _log = mo.accordion(
+        {"full run log": (_proc.stdout[-20000:] + "\n" + _proc.stderr[-4000:])}
+    )
+    if _proc.returncode != 0:
+        raise RuntimeError(
+            f"gpu_extension.py exited {_proc.returncode}\n{_proc.stderr[-2000:]}"
+        )
+    _mins = (time.perf_counter() - _t0) / 60
+
+    _keys = (
+        ["gpt2_small", "gpt2_medium", "smollm_135m", "opt_125m",
+         "pythia_160m", "pythia_410m", "qwen2_05b"]
+        if ai_model_key == "all" else [ai_model_key]
+    )
+    _summ = []
+    for _k in _keys:
+        _p = os.path.join(AI_REPO, "results/raw", f"gpu_summary_{_k}_{_tag(ai_ratio)}.json")
+        if os.path.exists(_p):
+            _summ.append((_k, json.load(open(_p))))
+    _rows = [
+        f"| {_k} | {s['gpu']} | {s['excised_heads']}/{s['total_heads']} | "
+        f"{s['retention']['wt2_unpruned']['ppl']:.4f} | "
+        f"{s['retention']['wt2_pruned']['ppl']:.4f} | "
+        f"{100*s['retention']['lambada_unpruned']['top1_accuracy']:.1f}% | "
+        f"{100*s['retention']['lambada_pruned']['top1_accuracy']:.1f}% | "
+        f"{list(s['kv_cache']['seq_lens'].values())[-1]['reduction_pct']:.1f}% |"
+        for _k, s in _summ
+    ]
+    _table = mo.md(
+        "## Measured summary (/TRUTH — runtime-executed)\n\n"
+        "| model | GPU | heads excised | WT-2 PPL base | WT-2 PPL pruned "
+        "| LAMBADA base | LAMBADA pruned | KV cut |\n"
+        "|---|---|---|---|---|---|---|---|\n" + "\n".join(_rows)
+    ) if _rows else mo.md("আর্টিফ্যাক্ট নেই।")
+    _stages = ("summary", "ppl", "latency", "mask", "kv")
+    _cards = []
+    for _k in _keys:
+        for _st in _stages:
+            _p = os.path.join(AI_REPO, "results/raw", f"gpu_{_st}_{_k}_{_tag(ai_ratio)}.json")
+            if os.path.exists(_p):
+                with open(_p, "rb") as _fh:
+                    _cards.append(
+                        mo.download(data=fh.read(), filename=os.path.basename(_p))
+                    )
+    _figs = []
+    for _k in _keys:
+        for _fig in ("latency", "kv"):
+            _p = os.path.join(AI_REPO, "results/figures", f"gpu_{_fig}_{_k}.png")
+            if os.path.exists(_p):
+                _figs.append(mo.image(src=_p, width=720))
+    return mo.vstack([
+        mo.md(f"## ✅ ALL-IN-ONE শেষ ({_mins:.1f} মিনিট)"),
+        _table, out,
+        mo.md("### 📥 JSON artifacts")] + _cards
+        + [mo.md("### 🖼 figures")] + _figs + [_ui],
+    )
+
+
+@app.cell
 def _(os, subprocess):
     REPO_URL = "https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark"
     REPO_DIR = "slm-head-redundancy-benchmark"
@@ -351,7 +479,7 @@ def _(mo, os):
             )
     _header = mo.md("### 📥 download repayment artifacts (সব মডেল)")
     _empty = mo.md("\u0995\u09cb\u09a8\u09cb artifact \u09a8\u09c7\u07a5\u0965")
-    _ = mo.vstack([_header] + _cards if _cards else _empty)
+    _ = mo.vstack([_header] + _cards if _cards else [_empty])
     return
 
 
