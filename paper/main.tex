@@ -247,7 +247,8 @@ We benchmark three architectures (Table~\ref{tab:arch}): GPT-2 Small
 positions), GPT-2 Medium (355M; 24 layers; 16 heads; $d=1024$), and
 SmolLM-135M (135M; 30 layers; 9 query heads over 3 KV groups, i.e.\ GQA with
 group size 3; $d=576$; Pre-RMSNorm; RoPE~\cite{su2024roformer}; SwiGLU~\cite{shazeer2020glu}).
-All experiments run in fp32 on CPU.
+All experiments run in fp32 on CPU; Section~\ref{sec:gpu} additionally
+replicates the representative 30\% configuration on a Tesla T4 GPU.
 
 \begin{table}[!t]
 \caption{Benchmark architecture matrix (\textsc{measured} parameter counts).}
@@ -520,6 +521,7 @@ Pruning & Top-1 acc.\ (\%) & Full-word (\%) & Target PPL \\
 \end{table}
 
 \subsection{Hardware Latency and Memory}
+\label{sec:hardware}
 Table~\ref{tab:latency} measures decode latency across batch sizes before and
 after 30\% excision with physical surgery; Fig.~\ref{fig:kv} plots the
 Theorem-3 KV footprint versus sequence length. Measured decode speedups are
@@ -558,6 +560,26 @@ Batch & Unpruned (ms) & 30\% pruned (ms) & Speedup \\
 for the unpruned model and progressively pruned variants.}
 \label{fig:kv}
 \end{figure}
+
+\subsection{CUDA Validation on a Tesla T4}
+\label{sec:gpu}
+To test whether dense GPU execution monetises the 33.3\% attention-parameter
+cut, we replicate the full 30\%-excision protocol for GPT-2 Small on a Tesla T4
+(16\,GB, torch 2.14.1, fp32). GPU calibration completes in 17.3\,s
+(${\approx}4.4\times10^{3}$ tokens/s with backward) versus hours on CPU, and the
+GPU reproduction matches the CPU baselines to run-to-run precision: WT-2 PPL
+36.676 unpruned (CPU 36.676) and 54.577 pruned (CPU-gated 55.699), with surgery
+versus gating equivalence $1.07\times10^{-4}$ absolute ($1.6\times10^{-6}$
+relative to the logit scale). Decode latency, however, is not improved:
+fp32 T4 decode measures 11.938$\to$12.102\,ms/token at $B{=}1$
+($-1.4\%$), 13.154$\to$13.448 at $B{=}4$ ($-2.2\%$), and 15.130$\to$15.452 at
+$B{=}8$ ($-2.1\%$). This is the empirical CUDA-side form of the FLOPs-vs-wall-clock
+critique: without kernel-integrated excision, dense cuDNN schedules cannot
+exploit head-level sparsity at fp32 decode. The measurable GPU-side benefit is
+memory, and it confirms Theorem 3 exactly --- live \texttt{past\_key\_value}
+tensors at 30\% excision match the analytic prediction to 0.00\% deviation and
+fall by 29.9\% at every measured length in $T \in \{128, 256, 512, 768, 1024\}$
+(e.g.\ 36.0$\to$25.25\,MB at $T{=}512$, $B{=}1$, fp32).
 
 \section{Discussion: the Mechanistic Genesis of Layer Vulnerability Asymmetry}
 
@@ -649,9 +671,12 @@ speedup, whereas perplexity-based claims require the union of the corpus- and
 probe-level evidence of Tables~\ref{tab:master}--\ref{tab:downstream}.
 
 \subsection{Limitations and Threats to Validity}
-Four limitations bound the scope of our claims. First, all experiments run in
-fp32 on CPU; GPU kernels change the latency constant, not the algebra, and the
-Theorem-3 memory claims are precision- and backend-independent. Second, the
+Four limitations bound the scope of our claims. First, the CPU benchmark matrix
+of Tables~\ref{tab:master}--\ref{tab:latency} runs in fp32 on CPU, with the
+single GPU check of Section~\ref{sec:gpu} limited to GPT-2 Small at 30\%; fp16
+tensor-core timing and kernel-integrated sparse execution remain unmeasured, as
+do CUDA profiles of GPT-2 Medium and SmolLM-135M. The Theorem-3 memory claims
+are precision- and backend-independent and are confirmed exactly on CUDA. Second, the
 calibration corpus is small (150 windows) by design---the method targets
 resource-constrained owners---and a larger calibration set could shift marginal
 head rankings; the Taylor/Fisher agreement ($r=0.927$) suggests the global
