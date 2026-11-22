@@ -1,0 +1,55 @@
+{
+  "model": "pythia_410m",
+  "hf_id": "EleutherAI/pythia-410m",
+  "device": "cuda",
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "corpus": "wikitext-2-raw-v1",
+  "protocol": {
+    "epochs": 2,
+    "train_windows": 2000,
+    "batch_size": 8,
+    "lr": 1e-05,
+    "window": 512,
+    "num_eval": 200,
+    "train_corpus": "wikitext-2 train split"
+  },
+  "unpruned_ppl": 23.402751746900904,
+  "rows": [
+    {
+      "ratio": 0.1,
+      "pre_ppl": 23.751679761819055,
+      "post_ppl": 22.70799329870358,
+      "pre_delta_pct": 1.4909700307544238,
+      "post_delta_pct": -2.9687040896347883,
+      "repair_pct": 299.1122576845239,
+      "ft_seconds": 80.97445242
+    },
+    {
+      "ratio": 0.2,
+      "pre_ppl": 24.995742859800817,
+      "post_ppl": 23.85205173530125,
+      "pre_delta_pct": 6.806853869698748,
+      "post_delta_pct": 1.9198596526574851,
+      "repair_pct": 71.79519805465644,
+      "ft_seconds": 76.28565273800001
+    },
+    {
+      "ratio": 0.3,
+      "pre_ppl": 27.978855005419163,
+      "post_ppl": 26.65563430391583,
+      "pre_delta_pct": 19.553697394257274,
+      "post_delta_pct": 13.899572974129782,
+      "repair_pct": 28.91588381534452,
+      "ft_seconds": 71.54247791199998
+    },
+    {
+      "ratio": 0.4,
+      "pre_ppl": 32.457627243455214,
+      "post_ppl": 30.91515165175431,
+      "pre_delta_pct": 38.69149916421002,
+      "post_delta_pct": 32.100498206789865,
+      "repair_pct": 17.0347520767996,
+      "ft_seconds": 66.741987903
+    }
+  ]
+}
