@@ -73,16 +73,18 @@ Prefer [molab](https://molab.marimo.io)? It hosts marimo notebooks on CoreWeave 
 **NVIDIA RTX Pro 6000 Blackwell (96 GB VRAM)** GPU, 12-hour sessions and 32 GB RAM — strictly
 more headroom than a Colab T4. Add the GitHub-synced notebook:
 
-- `MD-Mushfiqur123/slm-head-redundancy-benchmark` → `colab/slm_head_redundancy_gpu_allinone.py`
+- `MD-Mushfiqur123/slm-head-redundancy-benchmark` → `colab/slm_head_redundancy_gpu_blackwell.py`
 
 Toggle the GPU in the notebook-specs button, pick a model (all seven are in the dropdown,
-plus `all` for the full matrix), and press Run. The marimo app clones this repository,
-installs requirements, drives the same measured `/TRUTH` pipeline
-(`scripts/gpu_extension.py`), and offers the JSON artifacts and PNG figures for download.
-The notebook also carries a built-in **Run C — fine-tuning repayment** section
-(pick model, ratios, epochs, train windows and press the button; it drives
-`scripts/finetune_repayment.py` and renders the pre/post-repayment table with
-download buttons).
+plus `all` for the full matrix) and task (`benchmark` / `repayment` / `both`), and press Run.
+The marimo app preflights CUDA, clones this repository, installs requirements, drives the
+same measured `/TRUTH` pipeline (`scripts/gpu_extension.py`, GQA auto-snap included), and
+offers every raw JSON, repayment CSV and PNG figure for download. Artifact tables and
+downloads are glob-based, so GQA-snapped ratio tags (e.g. `29.2` for Qwen2.5-0.5B) always
+resolve; a failing run no longer aborts the whole session — remaining runs finish and a
+failure report is appended. The notebook also carries a built-in **Run C — fine-tuning
+repayment** section (it drives `scripts/finetune_repayment.py` and renders the pre/post-
+repayment table with download buttons).
 
 #### Dedicated long-jobs notebook
 
