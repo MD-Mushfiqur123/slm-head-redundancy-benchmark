@@ -159,14 +159,13 @@ def _(
               + (["--force"] if AI_FORCE.value else []))
         )
     if task_key in ("repayment", "both"):
-        if model_key == "all":
-            raise ValueError("repayment task: 'all' নয় — একটা মডেল বাছো")
-        runs.append(
-            ("repayment", [
-                sys.executable, "scripts/finetune_repayment.py",
-                "--model", model_key,
-            ] + (["--force"] if AI_FORCE.value else []))
-        )
+        for _rm in (AI_MODELS[:-1] if model_key == "all" else [model_key]):
+            runs.append(
+                (f"repayment·{_rm}", [
+                    sys.executable, "scripts/finetune_repayment.py",
+                    "--model", _rm,
+                ] + (["--force"] if AI_FORCE.value else []))
+            )
 
 
     def _tag(r: float) -> str:
