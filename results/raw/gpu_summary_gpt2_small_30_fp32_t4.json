@@ -1,0 +1,173 @@
+{
+  "spec": "SLM-HEAD-REDUNDANCY-MONUMENT \u2014 GPU extension (Colab)",
+  "model": "gpt2_small",
+  "hf_id": "gpt2",
+  "params_millions": 0.0,
+  "gpu": "Tesla T4",
+  "torch": "2.14.1+cu130",
+  "transformers": "5.22.1",
+  "ratio": 0.3,
+  "excised_heads": 43,
+  "total_heads": 144,
+  "calibration_seconds_gpu": 17.463636641999983,
+  "calibration_tokens_per_sec": 4397.7094561906015,
+  "retention": {
+    "model": "gpt2_small",
+    "ratio": 0.3,
+    "device": "Tesla T4",
+    "protocol": {
+      "window": 512,
+      "stride": 256,
+      "num_eval": 200,
+      "lambada": 250
+    },
+    "wt2_unpruned": {
+      "ppl": 36.67600456964273,
+      "tokens": 102200,
+      "seconds": 9.764954716999966
+    },
+    "ptb_unpruned": {
+      "ppl": 61.695866611903,
+      "tokens": 51100,
+      "seconds": 4.789180717000022
+    },
+    "lambada_unpruned": {
+      "top1_accuracy": 0.356,
+      "full_word_accuracy": 0.356,
+      "target_word_ppl": 34.66232320139537,
+      "num_scored_examples": 250.0,
+      "n_correct": 89.0
+    },
+    "wt2_pruned": {
+      "ppl": 54.57676693295992,
+      "tokens": 102200,
+      "seconds": 9.942873340999995
+    },
+    "ptb_pruned": {
+      "ppl": 97.00897345513933,
+      "tokens": 51100,
+      "seconds": 5.087850257000014
+    },
+    "lambada_pruned": {
+      "top1_accuracy": 0.228,
+      "full_word_accuracy": 0.22,
+      "target_word_ppl": 77.0693513109673,
+      "num_scored_examples": 250.0,
+      "n_correct": 57.0
+    }
+  },
+  "latency": {
+    "model": "gpt2_small",
+    "ratio": 0.3,
+    "fp16": false,
+    "gpu": "Tesla T4",
+    "kernel": "2.14.1+cu130",
+    "surgery_max_logit_diff": 0.0001068115234375,
+    "protocol": {
+      "decode_steps": 32,
+      "repeats": 7,
+      "warmup": 2,
+      "prefill_len": 256
+    },
+    "batch_sizes": {
+      "1": {
+        "unpruned": {
+          "decode_ms_per_token": 11.559398102678285,
+          "decode_std_ms_per_token": 0.19868618818431683,
+          "prefill_ms": 12.269557999989697,
+          "prefill_std_ms": 0.618904515946352
+        },
+        "pruned_30": {
+          "decode_ms_per_token": 11.684392183035186,
+          "decode_std_ms_per_token": 0.35707623378499836,
+          "prefill_ms": 12.362843285732847,
+          "prefill_std_ms": 0.25768335994243974
+        },
+        "speedup_pct": -1.0813199722565114
+      },
+      "4": {
+        "unpruned": {
+          "decode_ms_per_token": 12.893549553571455,
+          "decode_std_ms_per_token": 0.18727691974236654,
+          "prefill_ms": 13.971835857140443,
+          "prefill_std_ms": 0.7594354338459862
+        },
+        "pruned_30": {
+          "decode_ms_per_token": 13.069236651785689,
+          "decode_std_ms_per_token": 0.25195422887201047,
+          "prefill_ms": 13.557146571437377,
+          "prefill_std_ms": 0.23884687304367083
+        },
+        "speedup_pct": -1.3625968356058227
+      },
+      "8": {
+        "unpruned": {
+          "decode_ms_per_token": 15.774217026785767,
+          "decode_std_ms_per_token": 1.652071604586848,
+          "prefill_ms": 18.70835500000924,
+          "prefill_std_ms": 4.236368206512708
+        },
+        "pruned_30": {
+          "decode_ms_per_token": 15.229880107142943,
+          "decode_std_ms_per_token": 2.0587241274049237,
+          "prefill_ms": 20.10801685714471,
+          "prefill_std_ms": 2.19360323125926
+        },
+        "speedup_pct": 3.450801511849999
+      }
+    }
+  },
+  "kv_cache": {
+    "model": "gpt2_small",
+    "gpu": "Tesla T4",
+    "dtype_bytes": 4,
+    "fp16": false,
+    "seq_lens": {
+      "128": {
+        "T": 128,
+        "unpruned": 9.0,
+        "pruned30": 6.3125,
+        "reduction_pct": 29.861111111111114,
+        "theoretical_MB": 6.3125,
+        "unpruned_theoretical_MB": 9.0
+      },
+      "256": {
+        "T": 256,
+        "unpruned": 18.0,
+        "pruned30": 12.625,
+        "reduction_pct": 29.861111111111114,
+        "theoretical_MB": 12.625,
+        "unpruned_theoretical_MB": 18.0
+      },
+      "512": {
+        "T": 512,
+        "unpruned": 36.0,
+        "pruned30": 25.25,
+        "reduction_pct": 29.861111111111114,
+        "theoretical_MB": 25.25,
+        "unpruned_theoretical_MB": 36.0
+      },
+      "768": {
+        "T": 768,
+        "unpruned": 54.0,
+        "pruned30": 37.875,
+        "reduction_pct": 29.861111111111114,
+        "theoretical_MB": 37.875,
+        "unpruned_theoretical_MB": 54.0
+      },
+      "1024": {
+        "T": 1024,
+        "unpruned": 72.0,
+        "pruned30": 50.5,
+        "reduction_pct": 29.861111111111114,
+        "theoretical_MB": 50.5,
+        "unpruned_theoretical_MB": 72.0
+      }
+    }
+  },
+  "equivalence": {
+    "surgery_vs_gating_max_logit_diff": 0.0001068115234375,
+    "relative_threshold_fp32": 0.0005
+  },
+  "truth_law": "every value measured on the Colab runtime; no mocks"
+}

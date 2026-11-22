@@ -1,0 +1,61 @@
+{
+  "model": "gpt2_small",
+  "ratio": 0.3,
+  "fp16": false,
+  "gpu": "Tesla T4",
+  "kernel": "2.14.1+cu130",
+  "surgery_max_logit_diff": 0.0001068115234375,
+  "protocol": {
+    "decode_steps": 32,
+    "repeats": 7,
+    "warmup": 2,
+    "prefill_len": 256
+  },
+  "batch_sizes": {
+    "1": {
+      "unpruned": {
+        "decode_ms_per_token": 11.559398102678285,
+        "decode_std_ms_per_token": 0.19868618818431683,
+        "prefill_ms": 12.269557999989697,
+        "prefill_std_ms": 0.618904515946352
+      },
+      "pruned_30": {
+        "decode_ms_per_token": 11.684392183035186,
+        "decode_std_ms_per_token": 0.35707623378499836,
+        "prefill_ms": 12.362843285732847,
+        "prefill_std_ms": 0.25768335994243974
+      },
+      "speedup_pct": -1.0813199722565114
+    },
+    "4": {
+      "unpruned": {
+        "decode_ms_per_token": 12.893549553571455,
+        "decode_std_ms_per_token": 0.18727691974236654,
+        "prefill_ms": 13.971835857140443,
+        "prefill_std_ms": 0.7594354338459862
+      },
+      "pruned_30": {
+        "decode_ms_per_token": 13.069236651785689,
+        "decode_std_ms_per_token": 0.25195422887201047,
+        "prefill_ms": 13.557146571437377,
+        "prefill_std_ms": 0.23884687304367083
+      },
+      "speedup_pct": -1.3625968356058227
+    },
+    "8": {
+      "unpruned": {
+        "decode_ms_per_token": 15.774217026785767,
+        "decode_std_ms_per_token": 1.652071604586848,
+        "prefill_ms": 18.70835500000924,
+        "prefill_std_ms": 4.236368206512708
+      },
+      "pruned_30": {
+        "decode_ms_per_token": 15.229880107142943,
+        "decode_std_ms_per_token": 2.0587241274049237,
+        "prefill_ms": 20.10801685714471,
+        "prefill_std_ms": 2.19360323125926
+      },
+      "speedup_pct": 3.450801511849999
+    }
+  }
+}

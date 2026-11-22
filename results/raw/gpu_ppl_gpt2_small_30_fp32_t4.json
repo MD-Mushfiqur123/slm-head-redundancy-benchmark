@@ -1,0 +1,45 @@
+{
+  "model": "gpt2_small",
+  "ratio": 0.3,
+  "device": "Tesla T4",
+  "protocol": {
+    "window": 512,
+    "stride": 256,
+    "num_eval": 200,
+    "lambada": 250
+  },
+  "wt2_unpruned": {
+    "ppl": 36.67600456964273,
+    "tokens": 102200,
+    "seconds": 9.764954716999966
+  },
+  "ptb_unpruned": {
+    "ppl": 61.695866611903,
+    "tokens": 51100,
+    "seconds": 4.789180717000022
+  },
+  "lambada_unpruned": {
+    "top1_accuracy": 0.356,
+    "full_word_accuracy": 0.356,
+    "target_word_ppl": 34.66232320139537,
+    "num_scored_examples": 250.0,
+    "n_correct": 89.0
+  },
+  "wt2_pruned": {
+    "ppl": 54.57676693295992,
+    "tokens": 102200,
+    "seconds": 9.942873340999995
+  },
+  "ptb_pruned": {
+    "ppl": 97.00897345513933,
+    "tokens": 51100,
+    "seconds": 5.087850257000014
+  },
+  "lambada_pruned": {
+    "top1_accuracy": 0.228,
+    "full_word_accuracy": 0.22,
+    "target_word_ppl": 77.0693513109673,
+    "num_scored_examples": 250.0,
+    "n_correct": 57.0
+  }
+}
