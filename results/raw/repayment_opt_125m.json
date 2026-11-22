@@ -1,0 +1,28 @@
+{
+  "model": "opt_125m",
+  "hf_id": "facebook/opt-125m",
+  "device": "cuda",
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "corpus": "wikitext-2-raw-v1",
+  "protocol": {
+    "epochs": 2,
+    "train_windows": 2000,
+    "batch_size": 8,
+    "lr": 1e-05,
+    "window": 512,
+    "num_eval": 200,
+    "train_corpus": "wikitext-2 train split"
+  },
+  "unpruned_ppl": 39.934766134187264,
+  "rows": [
+    {
+      "ratio": 0.3,
+      "pre_ppl": 53.00937433563202,
+      "post_ppl": 46.1355607043382,
+      "pre_delta_pct": 32.7399142829883,
+      "post_delta_pct": 15.527309085309927,
+      "repair_pct": 52.5737637823385,
+      "ft_seconds": 31.7522067619999
+    }
+  ]
+}
