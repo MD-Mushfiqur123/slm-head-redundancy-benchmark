@@ -5,8 +5,9 @@
 Author: **Md. Mushfiqur Rahim** — Department of Science, Govt. Azizul Haque College, Bogura, Bangladesh.
 
 This repository is the complete, reproducible implementation of an empirical study of
-attention-head redundancy in sub-billion-parameter language models (GPT-2 Small 124M,
-GPT-2 Medium 355M, SmolLM-135M). It contains:
+attention-head redundancy in **seven** sub-billion-parameter language models (GPT-2 Small
+124M, GPT-2 Medium 355M, SmolLM-135M, OPT-125M, Pythia-160M, Pythia-410M, Qwen2.5-0.5B).
+It contains:
 
 - exact-gradient **first-order Taylor** head-sensitivity scoring,
 - **empirical Fisher** (second-order) head scoring,
@@ -31,7 +32,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 
-python -m unittest discover tests/          # unit tests (22 tests)
+python -m unittest discover tests/          # unit tests (47 tests)
 python run_experiments.py                   # full benchmark suite (hours)
 python scripts/aggregate_results.py         # CSVs
 python scripts/generate_figures.py          # Figures 1-6 (PDF + PNG)
@@ -99,6 +100,43 @@ cards for each:
 
 Same Add-from-GitHub path: `MD-Mushfiqur123/slm-head-redundancy-benchmark` →
 `colab/slm_head_redundancy_long_molab.py`.
+
+#### Full-ratio sweep notebook (one click, all models)
+
+`colab/sweep_all_models.py` sweeps the canonical 30%-excision workhorse across the full
+ratio grid on molab. Open it directly in molab (mirror your GitHub URL — replace
+`github.com` with `molab.marimo.io/github`):
+
+```
+https://molab.marimo.io/github/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/colab/sweep_all_models.py
+```
+
+Four one-click buttons:
+
+- **BUTTON A** — GPU-free recovery of an interrupted qwen2_05b run (rebuilds the summary
+  table + download cards from the JSONs already on disk);
+- **BUTTON B** — sequential full sweep of all six multi-head architectures × ratios
+  10/20/40/50/60% fp16 (`scripts/gpu_extension.py`, ~2 h per session);
+- **BUTTON C** — single-model sweep from a dropdown;
+- **BUTTON D** — bundles every `results/raw/*.json` + `results/*.csv` into one
+  `slm_all_gpu_artifacts.txt` download (verbatim /TRUTH ingest back into this repo).
+
+Canonical 30%/29.2% ratio files are never overwritten by the sweep notebook.
+
+#### Measured full-ratio sweep inventory (RTX PRO 6000 Blackwell, fp16, torch 2.11.0)
+
+`results/raw/` now carries, for each of the six multi-head models and each ratio tag
+10/20/40/50/60:
+
+- `gpu_ppl_<model>_<tag>.json` — WT-2 / PTB perplexity + LAMBADA (pruned and unpruned),
+- `gpu_mask_<model>_<tag>.json` — the excised-head mask,
+- `gpu_kv_<model>_<tag>.json` — live KV-cache bytes vs Theorem 3,
+- `gpu_latency_<model>_<tag>.json` — decode latency at B ∈ {1,4,8},
+- `gpu_summary_<model>_<tag>.json` — the combined stage summary.
+
+Paper Table `tab:fullratio` (compiled into `paper/tables/table9.tex`) reports the
+measured WT-2 perplexity matrix. Pending completion: `gpu_{kv,latency,summary}` for
+gpt2-medium and pythia-160m at the 60% point (their mask + ppl artifacts are committed).
 
 Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standalone CLI:
 
@@ -196,6 +234,7 @@ evaluation, preserving the paper's zero-overlap isolation protocol.
 | KV-cache (Theorem 3, B=8, T=1024, fp16) | 288.00 MB → 192.00 MB at 30% excision (exact 33.3% reduction) |
 | Taylor–Fisher head-rank correlation | r = 0.927 (GPT-2 Small) |
 | Surgical vs gated logit deviation | < 10⁻⁴ (fp32 roundoff) |
+| Full-ratio sweep, Blackwell fp16 (Tab. fullratio) | ΔPPL < 5% budget survives only the 10% point (4/6 models; none for GPT-2 Small and SmolLM-135M) |
 
 The surprise refuting the pre-registered "intermediate-band" hypothesis: GPT-2
 models place near-irreducible heads in the earliest layers (layer 0 mean
