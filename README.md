@@ -32,7 +32,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 
-python -m unittest discover tests/          # unit tests (47 tests)
+python -m unittest discover tests/          # unit tests (48 tests)
 python run_experiments.py                   # full benchmark suite (hours)
 python scripts/aggregate_results.py         # CSVs
 python scripts/generate_figures.py          # Figures 1-6 (PDF + PNG)
@@ -135,8 +135,9 @@ Canonical 30%/29.2% ratio files are never overwritten by the sweep notebook.
 - `gpu_summary_<model>_<tag>.json` — the combined stage summary.
 
 Paper Table `tab:fullratio` (compiled into `paper/tables/table9.tex`) reports the
-measured WT-2 perplexity matrix. Pending completion: `gpu_{kv,latency,summary}` for
-gpt2-medium and pythia-160m at the 60% point (their mask + ppl artifacts are committed).
+measured WT-2 perplexity matrix. The sweep is complete: every model × tag carries
+all five artifact types, measured at runtime on the RTX PRO 6000 Blackwell (fp16),
+including gpt2-medium and pythia-160m at the 60% point.
 
 Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standalone CLI:
 
