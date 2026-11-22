@@ -4,6 +4,7 @@
 #    summary + download cards — GPU ছাড়া, সেকেন্ডে।
 # ▶️ BUTTON B — সব ৬ মডেল sweep ধারাবাহিক (ratios 10/20/40/50/60%) — ~2 ঘণ্টা।
 # ▶️ BUTTON C — dropdown থেকে একক মডেল sweep (~15-25 min)।
+# ▶️ BUTTON E — GAP-FILL: gpt2_medium + pythia_160m এর বাকি 60% রান এক বোতামে (~10-15 মিনিট)।
 #
 # canonical 30%/29.2% measured আর্টিফ্যাক্ট কখনো overwrite হয় না — download cards
 # থেকেও বাদ। /TRUTH: প্রতিটা সংখ্যা runtime-এ মাপা — no mocks, no placeholders.
@@ -38,6 +39,7 @@ def _(mo):
         **বোতাম B (ভারী, ~2 ঘণ্টা):** বাকি ৬ মডেল sweep এক ক্লিকে।
         **বোতাম C:** একক মডেল sweep।
         **বোতাম D:** sweep শেষে সব JSON/CSV একটা txt-এ — এজেন্টকে এক ফাইলই পাঠানো যাবে।
+        **বোতাম E (GAP-FILL):** gpt2_medium + pythia_160m-এর মিসিং 60%-রান এক ক্লিকে (~10-15 মিনিট)।
 
         /TRUTH LAW: প্রতিটা সংখ্যা runtime-এ মাপা — canonical measured আর্টিফ্যাক্ট overwrite হয় না।
         """
@@ -64,6 +66,9 @@ def _(mo):
     BUNDLE_RUN = mo.ui.run_button(
         label="📦 BUTTON D — সব JSON একটা txt-এ (এক ডাউনলোড, সেকেন্ড)"
     )
+    GAP_RUN = mo.ui.run_button(
+        label="🩹 BUTTON E — GAP-FILL: gpt2_medium + pythia_160m এর বাকি 60% রান (~10-15 মিনিট)"
+    )
     UI_ALL = mo.vstack([
         mo.md("### 🎯 BUTTON A — আগে এটা চাপো (recover, GPU ছাড়া)"),
         RECOVER_RUN,
@@ -73,8 +78,10 @@ def _(mo):
         SWEEP_DROP, ONE_RUN,
         mo.md("### 🎯 BUTTON D — sweep শেষে সব JSON একত্রে এক txt-এ"),
         BUNDLE_RUN,
+        mo.md("### 🎯 BUTTON E — GAP-FILL (gpt2_medium + pythia_160m @60%)"),
+        GAP_RUN,
     ])
-    return BUNDLE_RUN, ALL_RUN, ONE_RUN, RECOVER_RUN, SWEEP_DROP, UI_ALL
+    return BUNDLE_RUN, ALL_RUN, ONE_RUN, RECOVER_RUN, SWEEP_DROP, UI_ALL, GAP_RUN
 
 
 @app.cell
@@ -322,6 +329,130 @@ def _(glob, json, mo, os, subprocess, sys, time, UI_ALL, ALL_RUN, ONE_RUN,
         + [UI_ALL],
     )
     return (RESULT_SWEEP,)
+
+
+@app.cell
+def _(glob, json, mo, os, subprocess, sys, time, UI_ALL, GAP_RUN):
+    _REPO_URL = "https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark"
+    _REPO = "slm-head-redundancy-benchmark"
+    _t0 = time.perf_counter()
+
+    def _banner(text):
+        print("─" * 64, flush=True)
+        print(text, flush=True)
+        print("─" * 64, flush=True)
+
+    _SELS = ["gpt2_medium", "pythia_160m"]
+    mo.stop(
+        not GAP_RUN.value,
+        mo.vstack([
+            mo.md("⏸️ BUTTON E চালু হয়নি — gpt2_medium + pythia_160m-ের মিসিং 60%-রান এক বোতামে হবে (~10-15 মিনিট)।"),
+            UI_ALL,
+        ]),
+    )
+    _banner("▶ GAP-FILL — missing 60% runs: " + ", ".join(_SELS))
+    if not os.path.isdir(_REPO):
+        _banner("② cloning repo")
+        subprocess.run(["git", "clone", "--depth", "1", _REPO_URL, _REPO], check=True)
+    else:
+        _banner("② pulling latest repo")
+        subprocess.run(
+            ["git", "-C", _REPO, "fetch", "origin", "main"],
+            capture_output=True, text=True, check=True,
+        )
+        if subprocess.run(
+            ["git", "-C", _REPO, "merge", "--ff-only", "origin/main"],
+            capture_output=True, text=True,
+        ).returncode != 0:
+            subprocess.run(
+                ["git", "-C", _REPO, "reset", "--hard", "origin/main"],
+                capture_output=True, text=True, check=True,
+            )
+    for _pkg in ("transformers", "datasets", "matplotlib", "tqdm"):
+        try:
+            __import__(_pkg)
+        except ImportError:
+            subprocess.run([sys.executable, "-m", "pip", "install", "-q", _pkg], check=True)
+
+    _repo_abs = os.path.abspath(_REPO)
+    _raw_abs = os.path.abspath(os.path.join(_REPO, "results", "raw"))
+
+    _tails = {}
+    _fails = []
+    for _sel in _SELS:
+        _ts = time.perf_counter()
+        _banner("▶ gap·" + _sel + "·ratio 0.6")
+        _p = subprocess.run(
+            [sys.executable, "scripts/gpu_extension.py",
+             "--model", _sel, "--ratio", "0.6", "--fp16"],
+            capture_output=True, text=True, cwd=_repo_abs,
+        )
+        _mins = (time.perf_counter() - _ts) / 60
+        _tails["gpu·" + _sel + "·r=0.6"] = (
+            "[" + format(_mins, ".1f") + " min, exit " + str(_p.returncode) + "]\n"
+            + _p.stdout[-12000:] + "\n" + _p.stderr[-4000:]
+        )
+        if _p.returncode != 0:
+            _fails.append(("gpu·" + _sel + "·r=0.6", _p.returncode, _p.stderr[-1500:]))
+
+    _model_tables = []
+    for _sel in _SELS:
+        _rows = []
+        for _f in sorted(glob.glob(os.path.join(_raw_abs, "gpu_summary_" + _sel + "_60.json"))):
+            with open(_f) as _fh:
+                _s = json.load(_fh)
+            _kv = list(_s["kv_cache"]["seq_lens"].values())[-1]["reduction_pct"]
+            _r = _s["retention"]
+            _rows.append(
+                "| " + format(_s["ratio"], ".3f") + " | " + format(_r["wt2_unpruned"]["ppl"], ".4f") + " | "
+                + format(_r["wt2_pruned"]["ppl"], ".4f") + " | "
+                + format(100 * _r["lambada_unpruned"]["top1_accuracy"], ".1f") + "% | "
+                + format(100 * _r["lambada_pruned"]["top1_accuracy"], ".1f") + "% | " + format(_kv, ".2f") + "% |"
+            )
+        _model_tables.append(mo.md(
+            "### 📊 " + _sel + " — @60% round\n\n"
+            + ("| excision | WT2 base | WT2 pruned | LAMB base | LAMB pruned | KV cut |\n"
+               "|---|---|---|---|---|---|\n" + "\n".join(_rows)
+               if _rows else "⚠️ 60% summary তৈরি হয়নি — নিচের fail log দেখো।")
+        ))
+
+    _cards = []
+    for _sel in _SELS:
+        for _p in sorted(glob.glob(os.path.join(_raw_abs, "gpu_*_" + _sel + "_60.json"))):
+            _nm = os.path.basename(_p)
+            if "30" in _nm or "29.2" in _nm:
+                continue
+            with open(_p, "rb") as _fd:
+                _cards.append(mo.download(data=_fd.read(), filename=_nm))
+
+    _mins_total = (time.perf_counter() - _t0) / 60
+    _fail_md = (
+        [mo.md("### ⚠️ ফেল হওয়া রান — রিপোর্ট এজেন্টকে দাও")]
+        + [mo.accordion({"⚠️ " + _fn + " (exit " + str(_rc) + ")": _err for _fn, _rc, _err in _fails})]
+        if _fails else []
+    )
+    RESULT_GAP = mo.vstack(
+        [mo.md(
+            "## ✅ GAP-FILL শেষ (" + format(_mins_total, ".1f") + " মিনিট) — models: " + ", ".join(_SELS) + " @60%"
+            + ("" if not _fails else " · ⚠️ কিছু রান ফেল")
+        )]
+        + [mo.md("## 📥 এখন 📦 BUTTON D চেপে ফুল txt এজেন্টকে দাও")]
+        + _model_tables
+        + ([mo.md("### 📥 download @60% artifacts (canonical বাদ)")] + _cards
+           if _cards else [mo.md("_নতুন @60% আর্টিফ্যাক্ট নেই_")])
+        + _fail_md
+        + [mo.md("### 📜 run logs"),
+           mo.accordion({"📜 " + _t: _log for _t, _log in _tails.items()})
+           if _tails else mo.md("কোনো রান হয়নি")]
+        + [UI_ALL],
+    )
+    return (RESULT_GAP,)
+
+
+@app.cell
+def _(RESULT_GAP):
+    RESULT_GAP
+    return
 
 
 @app.cell
