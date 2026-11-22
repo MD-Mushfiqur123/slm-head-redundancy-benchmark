@@ -16,7 +16,11 @@ It contains:
 - verification that physical weight surgery is *bit-equivalent* to gated ablation,
 - sliding-window perplexity (WikiText-2 + Penn Treebank), zero-shot LAMBADA completion,
 - wall-clock decode-latency benchmarks and Theorem-3 KV-cache memory accounting,
-- publication figures and an 8-page IEEE manuscript (`paper/main.tex`).
+- publication figures and an 8-page IEEE manuscript (`paper/main.tex`,
+  compiled copy at the repo root),
+- a one-click **evidence notebook** (`colab/paper_evidence.py`) that verifies
+  every paper claim against the measured raw artifacts in seconds — see
+  *One-click evidence notebook* below.
 
 ## The /TRUTH law
 
@@ -138,6 +142,45 @@ Paper Table `tab:fullratio` (compiled into `paper/tables/table9.tex`) reports th
 measured WT-2 perplexity matrix. The sweep is complete: every model × tag carries
 all five artifact types, measured at runtime on the RTX PRO 6000 Blackwell (fp16),
 including gpt2-medium and pythia-160m at the 60% point.
+
+#### The compiled paper
+
+The 8-page IEEE manuscript is compiled and committed at the repository root:
+
+- **[SLM-HEAD-REDUNDANCY-MONUMENT.pdf](https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/SLM-HEAD-REDUNDANCY-MONUMENT.pdf)**
+  (same build as `paper/main.pdf`; source: `paper/main.tex`, `tectonic`).
+
+#### One-click evidence notebook (no buttons, auto-runs)
+
+`colab/paper_evidence.py` is the **live proof deck** for the paper: it runs
+end-to-end in seconds with no GPU and no model download, and verifies every
+claim of the manuscript directly against the measured raw artifacts in
+`results/raw/`:
+
+- **/TRUTH LAW audit** — every truth-law JSON states the no-mock law, zero
+  parse failures, zero mock/placeholder markers;
+- **sweep-matrix completeness** — every model × tag carries all five artifact
+  types (mask / ppl / kv / latency / summary);
+- **mask geometry** — zeros == logged `excised` count, fraction ≈ requested
+  ratio, GQA `kv_group` intact;
+- **surgery ≡ gated ablation** — relative max-|Δlogit| < 2e-3 on every
+  relative-tolerance run;
+- **retention tables** — WT2 / PTB perplexity + LAMBADA, unpruned → pruned,
+  all points;
+- **Theorem 3 KV envelope** — measured live KV bytes vs the analytic bound at
+  every seq length;
+- **wall-clock latency** — speedup % at B ∈ {1, 4, 8};
+- **paper cross-check** — the exact measured strings appear in
+  `paper/main.tex`, all six figures exist, compiled PDF = 8 pages;
+- **full figure gallery** — every rendered sweep figure, and a single
+  `slm_paper_evidence_bundle.txt` download card (verdict report + every raw
+  JSON).
+
+Open directly in molab:
+
+```
+https://molab.marimo.io/github/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/colab/paper_evidence.py
+```
 
 Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standalone CLI:
 
