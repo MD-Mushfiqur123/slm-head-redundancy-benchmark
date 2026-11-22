@@ -27,6 +27,11 @@ class BaseImportanceMetric(abc.ABC):
     #: short identifier used in CSV columns and figure legends
     name: str = "base"
 
+    #: defensive-access targets: None until :meth:`finalize` stores the
+    #: accumulated matrix, so callers may probe ``scorer.raw_matrix`` early
+    raw_matrix = None
+    normalized_matrix = None
+
     @abc.abstractmethod
     def process_batch(self, hook_manager, batch) -> None:
         """Accumulate telemetry for one calibration batch (already run
