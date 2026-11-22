@@ -230,6 +230,31 @@ def table6():
     write("table6.tex", "\n".join(rows))
 
 
+def table9():
+    """Full-ratio fp16 Blackwell sweep per model: measured WT-2 ppl at 10/20/40/50/60%."""
+    order = [
+        "gpt2_small", "gpt2_medium", "opt_125m",
+        "pythia_160m", "pythia_410m", "smollm_135m",
+    ]
+    labels = {"gpt2_small": "GPT-2 Small", "gpt2_medium": "GPT-2 Medium",
+              "opt_125m": "OPT-125M", "pythia_160m": "Pythia-160M",
+              "pythia_410m": "Pythia-410M", "smollm_135m": "SmolLM-135M"}
+    tags = ["10", "20", "40", "50", "60"]
+    rows = []
+    for key in order:
+        cells = []
+        for t in tags:
+            path = os.path.join(RES, "raw", f"gpu_ppl_{key}_{t}.json")
+            if not os.path.exists(path):
+                continue
+            with open(path) as f:
+                s = json.load(f)
+            cells.append(f2(s["wt2_pruned"]["ppl"]))
+        if len(cells) == len(tags):
+            rows.append(f"{labels[key]} & " + " & ".join(cells) + " \\\\")
+    write("table9.tex", "\n".join(rows))
+
+
 if __name__ == "__main__":
     table1()
     table2()
@@ -239,3 +264,4 @@ if __name__ == "__main__":
     table6()
     table7()
     table8()
+    table9()

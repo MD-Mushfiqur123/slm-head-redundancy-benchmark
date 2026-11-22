@@ -385,7 +385,7 @@ Random (5 seeds) & \begin{tabular}[c]{@{}l@{}}270.7793\\ $\pm$ 155.3170\end{tabu
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.58\columnwidth]{figure2_pareto_frontier.pdf}
+\includegraphics[width=0.44\columnwidth]{figure2_pareto_frontier.pdf}
 \caption{Pruning-ratio frontier on GPT-2 Small: WikiText-2 perplexity versus
 global excision ratio for Taylor, Fisher, L2-norm, and random pruning
 (shaded: $\pm1\sigma$ over five seeds).}
@@ -394,7 +394,7 @@ global excision ratio for Taylor, Fisher, L2-norm, and random pruning
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.55\columnwidth]{figure1_importance_heatmap.pdf}
+\includegraphics[width=0.40\columnwidth]{figure1_importance_heatmap.pdf}
 \caption{Normalised first-order Taylor head sensitivity for GPT-2 Small
 ($12\times12$): an early-layer band (0--2) with a secondary mid-depth cluster
 peaking at layer 8.}
@@ -445,7 +445,7 @@ SmolLM-135M & 24.3911 & 29.5709 & 56.3566 & 6\% \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.55\columnwidth]{figure6_cross_model_retention.pdf}
+\includegraphics[width=0.40\columnwidth]{figure6_cross_model_retention.pdf}
 \caption{Cross-model sparsity retention: absolute perplexity (a) and relative
 degradation (b) versus pruning ratio for all three architectures.}
 \label{fig:retention}
@@ -486,7 +486,7 @@ Deep (L8--L11) & 48 & 22 & 33 & 54.2 \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.66\columnwidth]{figure3_layer_vulnerability.pdf}
+\includegraphics[width=0.46\columnwidth]{figure3_layer_vulnerability.pdf}
 \caption{Head survival rate by layer at 30\% and 50\% global excision (GPT-2
 Small): early layers are defended, intermediate and deep layers lose heads
 preferentially.}
@@ -495,7 +495,7 @@ preferentially.}
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.55\columnwidth]{figure4_entropy_scatter.pdf}
+\includegraphics[width=0.38\columnwidth]{figure4_entropy_scatter.pdf}
 \caption{Mean attention entropy versus normalised Taylor sensitivity for all 144
 heads of GPT-2 Small, with the least-squares trend and Pearson correlation.}
 \label{fig:scatter}
@@ -569,7 +569,7 @@ Batch & Unpruned (ms) & 30\% pruned (ms) & Speedup \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.58\columnwidth]{figure5_kv_cache_memory.pdf}
+\includegraphics[width=0.44\columnwidth]{figure5_kv_cache_memory.pdf}
 \caption{Analytical KV-cache memory (Theorem~3, B=8, fp16) versus sequence length
 for the unpruned model and progressively pruned variants.}
 \label{fig:kv}
@@ -659,6 +659,37 @@ GPT-2 Small), and $+92.7\%$ (Qwen2.5-0.5B), while LAMBADA top-1 falls from
 39--54\% to 9--32\%. Qwen2.5-0.5B pairs the best baseline (18.67) with the
 largest single-stream decode gain ($+7.3\%$ at $B{=}1$, versus $+0.3$ to
 $+4.3\%$ elsewhere) and the sharpest downstream cliff.
+
+\emph{Full-ratio sweep.} The six multi-head models were re-swept end-to-end in
+fp16 at 10/20/40/50/60\% global excision with the same Taylor masks
+(Table~\ref{tab:fullratio}). Through 20\% inflation stays below 12\% for the
+Pythia pair and GPT-2 Medium, LAMBADA top-1 stays within 16.8\,pp of baseline
+(all but SmolLM-135M, $-28.4$\,pp at 20\%); at 40\% inflation spans
+$+36$--$+157\%$, GPT-2 Small collapses to 3495.51 by 60\% ($+9430\%$ over
+36.68) while GPT-2 Medium degrades mildest ($+281\%$), and SmolLM-135M retains
+no LAMBADA accuracy at 60\%. Under the $5\%$ perplexity budget only the 10\%
+point survives (four of six models; none for GPT-2 Small and SmolLM-135M).
+
+\begin{table}[!t]
+\caption{Full-ratio Blackwell fp16 sweep: measured WikiText-2 perplexity at
+10--60\% excision (Taylor masks).}
+\label{tab:fullratio}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Model & @10\% & @20\% & @40\% & @50\% & @60\% \\
+\midrule
+GPT-2 Small & 39.20 & 43.75 & 94.42 & 837.17 & 3495.51 \\
+GPT-2 Medium & 27.77 & 30.19 & 42.70 & 64.52 & 102.94 \\
+OPT-125M & 41.10 & 44.74 & 76.63 & 104.43 & 162.24 \\
+Pythia-160M & 38.77 & 40.32 & 52.07 & 66.43 & 90.84 \\
+Pythia-410M & 23.75 & 25.00 & 32.46 & 44.48 & 63.37 \\
+SmolLM-135M & 26.22 & 29.57 & 54.61 & 80.54 & 145.61 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \emph{GQA KV sharing bounds the realizable cache cut.} The Theorem-3 algebra
 counts one cache entry per query head, exact for multi-head attention but an
@@ -761,23 +792,21 @@ tolerate without repayment.
 \section{Conclusion and Future Work}
 This paper introduced an exact, hook-based first-order sensitivity geometry for
 structural attention-head pruning in sub-billion language models, proved its
-functional and surgical equivalences, and benchmarked it under a strict,
-token-exact protocol with decimal-level traceability. Three measured conclusions
-stand. First, layer vulnerability asymmetry is real, but its direction is
+functional and surgical equivalences, and benchmarked it under a strict
+token-exact protocol. Three measured conclusions stand. First, layer vulnerability asymmetry is real, but its direction is
 architectural: early-layer criticality in GPT-2 (Post-LN), a defended U-shaped
 middle in SmolLM (Pre-LN, RoPE, GQA). Second, without fine-tuning repayment the
 honest redundancy budget is narrow---5--10\% of heads at a 5\% perplexity
 tolerance---not the 35--40\% of pipelines that amortise pruning errors by
 post-training; a static heuristic can consume the entire budget in one step
-(L2 ranking at 30\% excision degrades perplexity by 5.9$\times$). Third,
+(L2 ranking at 30\% degrades perplexity by 5.9$\times$). Third,
 physically excised heads deliver exact, Theorem-3-linear KV-cache savings and
 measured CPU decode speedups of 11--18\%; on CUDA, dense kernels do not
 monetise head sparsity, so wall-clock decode is at parity while the cache and
-bandwidth reduction remains exact and immediate, with the Blackwell matrix
-additionally showing $+0.3$ to $+7.3\%$ single-stream decode gains and an exact
-16.7--30.0\% measured cache cut (Section~\ref{sec:gpumatrix}). Future work:
-(i)~per-layer low-rank repayment coupled to the sensitivity map, for which the
-measured 15.0--56.9\% whole-model repayment sets the baseline to beat;
+bandwidth reduction remains exact and immediate; the Blackwell matrix shows
+$+0.3$ to $+7.3\%$ single-stream decode gains (Section~\ref{sec:gpumatrix}).
+Future work: (i)~per-layer low-rank repayment coupled to the sensitivity map,
+with the measured 15.0--56.9\% whole-model repayment as the baseline to beat;
 (ii)~Mixture-of-Experts routing; and (iii)~on-chip SRAM deployment, where the
 Theorem-3 algebra directly determines tile budgets. All code, raw telemetry,
 and artefacts are released for independent verification.
@@ -793,29 +822,27 @@ corpus- and probe-level evidence of Tables~\ref{tab:master}--\ref{tab:downstream
 
 \subsection{Limitations and Threats to Validity}
 Four limitations bound the scope of our claims. First, the CPU matrix of
-Tables~\ref{tab:master}--\ref{tab:latency} runs in fp32 on CPU, with the GPU
-matrix of Section~\ref{sec:gpumatrix} replicating all seven architectures in
-fp16 only at the 30\%-excision point (fp32-GPU replication beyond GPT-2 Small,
-full-ratio GPU sweeps, and kernel-integrated sparse execution remain
-unmeasured); calibration sessions differ between CPU and GPU pipelines, so the
+Tables~\ref{tab:master}--\ref{tab:latency} runs in fp32 on CPU, and the GPU
+matrix of Section~\ref{sec:gpumatrix} replicates the six multi-head
+architectures in fp16 across 10--60\% excision (fp32-GPU replication beyond
+GPT-2 Small and kernel-integrated sparse execution remain unmeasured);
+calibration sessions differ between CPU and GPU pipelines, so the
 two masks are not head-identical and only protocol-level comparisons are
-drawn. Second, the calibration corpus is small (150 windows) by
-design---the method targets resource-constrained owners---and a larger set
-could shift marginal head rankings; the Taylor/Fisher agreement ($r=0.927$)
-suggests the global geometry is stable at this scale. Third, the repayment's budget and seed robustness are measured only at the
-endpoint architectures over 1/2/4-epoch budgets and three seeds; the canonical
-matrix is a single two-epoch budget, and larger budgets plus corpus-scale
-repayment are unmeasured. Fourth, CPU
-wall-clock latency exhibits scheduler-scale jitter, so batch-scale claims rest
-on replicated timing (7 repeats) with standard deviations reported alongside
-every latency figure.
+drawn. Second, the calibration corpus is small (150 windows) by design; a larger set
+could shift marginal head rankings, though the Taylor/Fisher agreement
+($r=0.927$) suggests the global geometry is stable at this scale. Third, repayment budget
+and seed robustness are measured only at the endpoint architectures (1/2/4-epoch
+budgets, three seeds); larger budgets plus corpus-scale repayment are unmeasured.
+Fourth, CPU wall-clock latency exhibits
+scheduler-scale jitter; batch-scale claims rest on replicated timing (7
+repeats) with standard deviations reported alongside every latency figure.
 
 \section{Related Work}
 Structured pruning of Transformer attention originates with
 Michel et al.~\cite{michel2019sixteen}, who showed that most heads can be removed
-at inference, and Voita et al.~\cite{voita2019analyzing}, who combined
-L0-regularisation with probability-difficulty and positional-diffuseness scores,
-observing that specialised heads concentrate in middle layers. Clark et
+at inference, and Voita et al.~\cite{voita2019analyzing}, combining
+L0-regularisation with difficulty scores; specialised heads concentrate in
+middle layers. Clark et
 al.~\cite{clark2019what} mapped BERT's attention to syntactic roles. For dynamic
 networks, magnitude-based one-shot criteria~\cite{molchanov2017pruning} and
 global sparsity philosophies~\cite{hoefler2021sparsity} underlie our global
@@ -824,8 +851,8 @@ and quantisation-optimal variants~\cite{frantar2023opt, xiao2023efficient, lin20
 meng2024ppl}; our focus is complementary: \emph{exact}, adjustment-free head
 excision in the sub-billion regime where fine-tuning budgets are unavailable.
 Serving-level KV management~\cite{kwon2023efficient} attacks the same memory wall
-from the allocator side; our Theorem-3 accounting shows pruning attacks its
-source. Circuit analyses of induction
+allocator-side; Theorem-3 accounting shows pruning attacks its source. Circuit
+analyses of induction
 heads~\cite{elhage2021mathematical, olsson2022context, papadimitriou2022subject}
 motivate the intermediate-layer concentration we observe, and architectural
 innovations (RoPE~\cite{su2024roformer}, SwiGLU~\cite{shazeer2020glu},
@@ -834,22 +861,19 @@ define the modern SLM chassis represented by SmolLM~\cite{allal2025smollm}.
 
 Three threads of efficiency work bracket our contribution. Movement
 pruning~\cite{sanh2020movement} brings training signal into pruning decisions
-but typically assumes a fine-tuning repair phase; our measurements quantify how
-much head budget survives without one. Sliding-window perplexity
+but typically assumes a fine-tuning repair phase; our measurements quantify the
+surviving head budget. Sliding-window perplexity
 protocols~\cite{merity2016pointer} and the LAMBADA
-probe~\cite{paperno2016lambada} supply the token-exact retention measures our
-audit requires. Quantisation and KV-cache management
+probe~\cite{paperno2016lambada} supply our token-exact retention measures.
+Quantisation and KV-cache management
 (sub-quadratic caches, paged attention~\cite{kwon2023efficient}) attack the
 memory wall through lower-precision or better-allocated storage, orthogonal to
-removing the cache's \emph{structural source}: excised heads no
-longer allocate, copy, or load KV state at all, compounding multiplicatively
-with backend-level optimisations.
+removing the cache's \emph{structural source}: excised heads never allocate,
+copy, or load KV state, compounding with backend-level optimisations.
 
 \section*{Acknowledgment}
-The author thanks the open-source tooling maintainers (PyTorch, Hugging Face
-\texttt{transformers}/\texttt{datasets}, matplotlib, pandas, NumPy, SciPy) that
-made the executed benchmarks possible.
-
+The author thanks the PyTorch, Hugging Face, and matplotlib maintainers for the
+tooling underpinning every executed benchmark.
 \balance
 \bibliographystyle{IEEEtranS}
 \bibliography{references}
