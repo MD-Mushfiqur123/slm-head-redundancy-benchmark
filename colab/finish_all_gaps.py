@@ -77,7 +77,7 @@ def _(mo):
 
 
 @app.cell
-def _(glob, json, LIGHT_RUN, mo, os, subprocess, sys, time):
+def _(glob, json, LIGHT_RUN, mo, os, subprocess, sys, time, UI_ALL):
     _REPO_URL = "https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark"
     _REPO = "slm-head-redundancy-benchmark"
     _t0 = time.perf_counter()
@@ -113,8 +113,9 @@ def _(glob, json, LIGHT_RUN, mo, os, subprocess, sys, time):
                     "## ⛔ GPU পাওয়া যায়নি\n\n"
                     f"preflight: `{_gpu_flag}` — এই নোটবুক CUDA exclusive।\n\n"
                     "molab-এ: স্পেক-গিয়ার ⚙️ → GPU **NVIDIA RTX Pro 6000** সিলেক্ট করে "
-                    "সেশন রিস্টার্ট করো, তারপর আবার বোতাম চাপো।"
+                    "সেশন রিস্টার্ট করো, তারপর আবার নিচের **BUTTON 1** চাপো।"
                 ),
+                UI_ALL,
             ]),
         )
     mo.stop(
@@ -122,8 +123,9 @@ def _(glob, json, LIGHT_RUN, mo, os, subprocess, sys, time):
         mo.vstack([
             mo.md(
                 f"⏸️ এখনো চালু হয়নি — GPU রেডি ✅ ({_gpu_name})।\n\n"
-                "উপরের **BUTTON 1** চাপো।"
+                "নিচের **BUTTON 1** চাপো।"
             ),
+            UI_ALL,
         ]),
     )
     _banner(f"① GPU preflight ok — {_gpu_name}")
@@ -349,7 +351,8 @@ def _(glob, json, LIGHT_RUN, mo, os, subprocess, sys, time):
                  " · /TRUTH: প্রতিটা সংখ্যা runtime-এ মাপা · canonical overwrite নেই")]
         + [mo.md("### 📜 run logs"),
            mo.accordion({f"📜 {_t}": _log for _t, _log in _tails.items()})
-           if _tails else mo.md("_কোনো রান হয়নি_")],
+           if _tails else mo.md("_কোনো রান হয়নি_")]
+        + [UI_ALL],
     )
     return (RESULT_LIGHT,)
 
@@ -361,7 +364,7 @@ def _(RESULT_LIGHT):
 
 
 @app.cell
-def _(glob, json, mo, os, subprocess, SWEEP_DROP, SWEEP_RUN, sys, time):
+def _(glob, json, mo, os, subprocess, SWEEP_DROP, SWEEP_RUN, sys, time, UI_ALL):
     _REPO_URL = "https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark"
     _REPO = "slm-head-redundancy-benchmark"
     _t0 = time.perf_counter()
@@ -392,14 +395,20 @@ def _(glob, json, mo, os, subprocess, SWEEP_DROP, SWEEP_RUN, sys, time):
     if _gpu_flag != "CUDA_OK":
         mo.stop(
             True,
-            mo.vstack([mo.md(
-                "## ⛔ GPU পাওয়া যায়নি — molab-এ RTX Pro 6000 সিলেক্ট করে রিস্টার্ট করো")]),
+            mo.vstack([
+                mo.md(
+                    "## ⛔ GPU পাওয়া যায়নি — molab-এ RTX Pro 6000 সিলেক্ট করে রিস্টার্ট করো"),
+                UI_ALL,
+            ]),
         )
     mo.stop(
         not SWEEP_RUN.value,
-        mo.vstack([mo.md(
-            f"⏸️ BUTTON 2 চালু হয়নি — GPU রেডি ✅ ({_gpu_name})। "
-            "মডেল সিলেক্ট করে বোতাম চাপো (~15-25 min/model)।")]),
+        mo.vstack([
+            mo.md(
+                f"⏸️ BUTTON 2 চালু হয়নি — GPU রেডি ✅ ({_gpu_name})। "
+                "নিচে মডেল সিলেক্ট করে বোতাম চাপো (~15-25 min/model)।"),
+            UI_ALL,
+        ]),
     )
     _SEL = SWEEP_DROP.value or "gpt2_small"
     _banner(f"① GPU preflight ok — {_gpu_name} · sweep model: {_SEL}")
@@ -507,7 +516,8 @@ def _(glob, json, mo, os, subprocess, SWEEP_DROP, SWEEP_RUN, sys, time):
         + _fail_md2
         + [mo.md("### 📜 run logs"),
            mo.accordion({f"📜 {_t}": _log for _t, _log in _tails.items()})
-           if _tails else mo.md("_কোনো রান হয়নি_")],
+           if _tails else mo.md("_কোনো রান হয়নি_")]
+        + [UI_ALL],
     )
     return (RESULT_SWEEP,)
 
