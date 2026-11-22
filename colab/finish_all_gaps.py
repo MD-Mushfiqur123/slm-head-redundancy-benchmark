@@ -21,6 +21,7 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    import glob
     import json
     import os
     import subprocess
@@ -28,7 +29,7 @@ def _():
     import time
 
     import marimo as mo
-    return json, mo, os, subprocess, sys, time
+    return glob, json, mo, os, subprocess, sys, time
 
 
 @app.cell
