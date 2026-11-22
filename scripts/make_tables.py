@@ -148,6 +148,70 @@ def table5():
     write("table5.tex", "\n".join(rows))
 
 
+def table7():
+    """Seven-model RTX PRO 6000 Blackwell fp16 matrix at the 30%%-excision point."""
+    order = [
+        "gpt2_small", "gpt2_medium", "opt_125m", "pythia_160m",
+        "pythia_410m", "smollm_135m", "qwen2_05b",
+    ]
+    labels = {"gpt2_small": "GPT-2 Small", "gpt2_medium": "GPT-2 Medium",
+              "opt_125m": "OPT-125M", "pythia_160m": "Pythia-160M",
+              "pythia_410m": "Pythia-410M", "smollm_135m": "SmolLM-135M",
+              "qwen2_05b": "Qwen2.5-0.5B"}
+    rows = []
+    for key in order:
+        cands = sorted(glob.glob(os.path.join(RES, "raw", f"gpu_summary_{key}_*fp16.json")))
+        if not cands:
+            continue
+        path = ([p for p in cands if "29.2" in p] or cands)[-1]
+        with open(path) as f:
+            s = json.load(f)
+        kv = list(s["kv_cache"]["seq_lens"].values())[-1]["reduction_pct"]
+        rows.append(
+            f"{labels[key]} & {s['params_millions']:.1f} & "
+            f"{s['excised_heads']}/{s['total_heads']} & "
+            f"{f2(s['retention']['wt2_unpruned']['ppl'])} & "
+            f"{f2(s['retention']['wt2_pruned']['ppl'])} & "
+            f"{f1(100 * s['retention']['lambada_unpruned']['top1_accuracy'])} & "
+            f"{f1(100 * s['retention']['lambada_pruned']['top1_accuracy'])} & "
+            f"{f1(kv)} \\\\"
+        )
+    write("table7.tex", "\n".join(rows))
+
+
+def table8():
+    """Fine-tuning repayment: repair fraction (%% of damage repaid) per ratio."""
+    order = [
+        "gpt2_small", "gpt2_medium", "opt_125m", "pythia_160m",
+        "pythia_410m", "smollm_135m", "qwen2_05b",
+    ]
+    labels = {"gpt2_small": "GPT-2 Small", "gpt2_medium": "GPT-2 Medium",
+              "opt_125m": "OPT-125M", "pythia_160m": "Pythia-160M",
+              "pythia_410m": "Pythia-410M", "smollm_135m": "SmolLM-135M",
+              "qwen2_05b": "Qwen2.5-0.5B"}
+    buckets = [(0.10, "10\\%"), (0.20, "20\\%"), (0.30, "30\\%"), (0.40, "40\\%")]
+
+    def cell(res, target):
+        best = min(res["rows"], key=lambda r: abs(r["ratio"] - target))
+        if abs(best["ratio"] - target) > 0.02:
+            return "--"
+        tag = ""
+        if abs(best["ratio"] - target) > 1e-9:
+            tag = f"\\,({100 * best['ratio']:.1f})"
+        return f"{f1(best['repair_pct'])}{tag}"
+
+    rows = []
+    for key in order:
+        path = os.path.join(RES, "raw", f"repayment_{key}.json")
+        if not os.path.exists(path):
+            continue
+        with open(path) as f:
+            res = json.load(f)
+        cells = " & ".join(cell(res, t) for t, _ in buckets)
+        rows.append(f"{labels[key]} & {cells} \\\\")
+    write("table8.tex", "\n".join(rows))
+
+
 def table6():
     path = os.path.join(RES, "raw", "latency_gpt2_small.json")
     with open(path) as f:
@@ -173,3 +237,5 @@ if __name__ == "__main__":
     table4()
     table5()
     table6()
+    table7()
+    table8()

@@ -61,6 +61,13 @@ L2 weight-norm heuristic (641.1694) and the five-seed random control
 up to 18.2\% ($B{=}1$) on CPU and the Theorem-3 KV-cache footprint by exactly 33.3\%
 ($B{=}8$, $T{=}1024$, fp16), while two CUDA replications measure wall-clock
 decode parity with the same exact memory reduction.
+A complete seven-model matrix on an RTX PRO 6000 Blackwell GPU (fp16, 30\%
+excision; GPT-2 Small/Medium, OPT-125M~\cite{zhang2022opt},
+Pythia-160M/410M~\cite{biderman2023pythia}, SmolLM-135M,
+Qwen2.5-0.5B~\cite{qwen2025qwen25}) widens the unrepaid envelope to 13--92\%,
+measures a two-epoch repayment recovering 15--57\% of the damage (over
+100\% at 10\% excision), and shows GQA KV sharing capping Qwen2.5-0.5B's
+cache cut at 16.7\% measured versus 29.2\% theoretical.
 The study contributes an exact, repayment-free, audit-traceable methodology and
 demonstrates that measured sensitivity geometry---not structural symmetry---should
 govern non-uniform head allocation for on-device SLM deployment.
@@ -91,7 +98,8 @@ shallow layers extract token identity and local syntax~\cite{khandelwal2019sharp
 intermediate layers host compositional and induction-mediated
 mechanisms~\cite{elhage2021mathematical, olsson2022context}, and deep layers collapse
 representations toward the vocabulary logits. This paper tests that hypothesis
-directly, without fine-tuning repayment. The measured answer is architecture-dependent and partially
+directly, without fine-tuning repayment---and then measures, per model, exactly
+what a fine-tuning budget repays. The measured answer is architecture-dependent and partially
 refutes the intermediality story: GPT-2 concentrates sensitivity in layer~0 (echoing
 Michel et al.'s per-layer ablations~\cite{michel2019sixteen}, now generalised
 per-head), while GQA-based SmolLM distributes sensitivity in a U-shaped profile
@@ -111,6 +119,11 @@ defended mid-network.
   GPT-2 Medium, and SmolLM-135M with a four-way paradigm ablation (Taylor, Fisher,
   L2-norm, random) at $30\%$ sparsity, evaluated on WikiText-2, Penn Treebank,
   and LAMBADA.
+  \item \textbf{Seven-model Blackwell matrix and repayment study.} The 30\%
+  protocol replicated end-to-end in fp16 on an RTX PRO 6000 Blackwell GPU for
+  all seven architectures, plus a fine-tuning repayment sweep that measures,
+  for each model, exactly what fraction of the excision damage a two-epoch
+  budget repairs.
   \item \textbf{Hardware profiling.} Wall-clock decode latency across batch sizes
   $\{1,4,8\}$, prefill latency, and analytical/empirical KV-cache memory scaling,
   all reported from executed code with 4--decimal traceability between raw
@@ -256,8 +269,8 @@ backends (Tesla T4 in fp32; RTX PRO 6000 Blackwell end-to-end in fp16).
 \caption{Benchmark architecture matrix (\textsc{measured} parameter counts).}
 \label{tab:arch}
 \centering
-\small
 \footnotesize
+\scriptsize
 \begin{tabular}{lrrrr}
 \toprule
 Model & $L$ & $N_h$ & $d_{\text{m}}$ & M\\ \\
@@ -356,8 +369,8 @@ WikiText-2 perplexity, LAMBADA top-1 accuracy, and decode latency. Random is
 mean~$\pm$~1\,s.d.\ over five seeds.}
 \label{tab:paradigms}
 \centering
-\small
 \footnotesize
+\scriptsize
 \begin{tabular}{lccc}
 \toprule
 Method & WT2 PPL & LAMBADA (\%) & Lat. (ms) \\
@@ -372,20 +385,19 @@ Random (5 seeds) & \begin{tabular}[c]{@{}l@{}}270.7793\\ $\pm$ 155.3170\end{tabu
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figure2_pareto_frontier.pdf}
-\caption{Pruning-ratio frontier on GPT-2 Small: exact WikiText-2 perplexity versus
-global head excision ratio for Taylor, Fisher, L2-norm, and random pruning
-(shaded: $\pm1\sigma$ over the five-seed random control).}
+\includegraphics[width=0.64\columnwidth]{figure2_pareto_frontier.pdf}
+\caption{Pruning-ratio frontier on GPT-2 Small: WikiText-2 perplexity versus
+global excision ratio for Taylor, Fisher, L2-norm, and random pruning
+(shaded: $\pm1\sigma$ over five seeds).}
 \label{fig:pareto}
 \end{figure}
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figure1_importance_heatmap.pdf}
+\includegraphics[width=0.62\columnwidth]{figure1_importance_heatmap.pdf}
 \caption{Normalised first-order Taylor head sensitivity for GPT-2 Small
-($12\times12$). The largest sensitivities concentrate in an early-layer band
-(layers 0--2) with a secondary mid-depth cluster peaking at layer 8; layer-0
-heads are almost never excisable by the global ranking.}
+($12\times12$): an early-layer band (0--2) with a secondary mid-depth cluster
+peaking at layer 8.}
 \label{fig:heatmap}
 \end{figure}
 
@@ -418,8 +430,8 @@ perplexity inflation is $+157\%$ (Small), $+66\%$ (Medium), and $+131\%$
 $\Delta\ppl<5\%$.}
 \label{tab:crossarch}
 \centering
-\small
 \footnotesize
+\scriptsize
 \begin{tabular}{lrrrr}
 \toprule
 Model & Base & @20\% & @40\% & Max$<5\%$ \\
@@ -433,7 +445,7 @@ SmolLM-135M & 24.3911 & 29.5709 & 56.3566 & 6\% \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figure6_cross_model_retention.pdf}
+\includegraphics[width=0.62\columnwidth]{figure6_cross_model_retention.pdf}
 \caption{Cross-model sparsity retention: absolute perplexity (a) and relative
 degradation (b) versus pruning ratio for all three architectures.}
 \label{fig:retention}
@@ -458,8 +470,8 @@ Michel et al.'s per-layer ablations~\cite{michel2019sixteen}.
 \caption{Layer-wise stratification of globally pruned heads on GPT-2 Small.}
 \label{tab:strata}
 \centering
-\small
 \footnotesize
+\scriptsize
 \begin{tabular}{lrrrr}
 \toprule
 Stratum & Heads & Exc.@30 & Exc.@50 & Surv.\\@ (\%) \\
@@ -474,16 +486,16 @@ Deep (L8--L11) & 48 & 22 & 33 & 54.2 \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figure3_layer_vulnerability.pdf}
+\includegraphics[width=0.72\columnwidth]{figure3_layer_vulnerability.pdf}
 \caption{Head survival rate by layer at 30\% and 50\% global excision (GPT-2
-Small). Early layers are emphatically defended by the global sensitivity ranking;
-intermediate and deep layers lose heads preferentially.}
+Small): early layers are defended, intermediate and deep layers lose heads
+preferentially.}
 \label{fig:vuln}
 \end{figure}
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figure4_entropy_scatter.pdf}
+\includegraphics[width=0.62\columnwidth]{figure4_entropy_scatter.pdf}
 \caption{Mean attention entropy versus normalised Taylor sensitivity for all 144
 heads of GPT-2 Small, with the least-squares trend and Pearson correlation.}
 \label{fig:scatter}
@@ -505,8 +517,8 @@ mid-band excision.
 \caption{Zero-shot LAMBADA retention on GPT-2 Small (250 test examples).}
 \label{tab:downstream}
 \centering
-\small
 \footnotesize
+\scriptsize
 \begin{tabular}{crrr}
 \toprule
 Pruning & Top-1 acc.\ (\%) & Full-word (\%) & Target PPL \\
@@ -542,8 +554,8 @@ with the repository artefacts.
 and measured speedup, GPT-2 Small, 256-token prefill, 32 decode steps.}
 \label{tab:latency}
 \centering
-\small
 \footnotesize
+\scriptsize
 \begin{tabular}{crrr}
 \toprule
 Batch & Unpruned (ms) & 30\% pruned (ms) & Speedup \\
@@ -557,7 +569,7 @@ Batch & Unpruned (ms) & 30\% pruned (ms) & Speedup \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{figure5_kv_cache_memory.pdf}
+\includegraphics[width=0.64\columnwidth]{figure5_kv_cache_memory.pdf}
 \caption{Analytical KV-cache memory (Theorem~3, B=8, fp16) versus sequence length
 for the unpruned model and progressively pruned variants.}
 \label{fig:kv}
@@ -602,6 +614,98 @@ choices yet still excises heads of roughly half the mean fp32 importance, so
 the excess degradation is attributable jointly to noisier low-precision
 calibration and fp16 gated evaluation quantisation, not to the excision algebra
 itself.
+
+\subsection{Seven-Model Blackwell Matrix and Fine-Tuning Repayment}
+\label{sec:gpumatrix}
+To test whether the three-architecture conclusions generalise, we replicate the
+full 30\%-excision protocol end-to-end in fp16 on an RTX PRO 6000 Blackwell GPU
+(torch 2.11.0, 96\,GB) for seven sub-billion decoders: GPT-2 Small, GPT-2
+Medium, OPT-125M~\cite{zhang2022opt}, Pythia-160M and
+Pythia-410M~\cite{biderman2023pythia}, SmolLM-135M, and
+Qwen2.5-0.5B~\cite{qwen2025qwen25}. Taylor calibration completes in 1.7--5.3\,s
+per model; surgery-versus-gating equivalence holds with relative logit max-diff
+at or below $6.81\times10^{-4}$ (threshold $2\times10^{-3}$; bitwise exact on
+the GPT-2 family), and live KV-cache bytes match a dtype-correct per-KV-head
+accounting at every measured length for the five non-GQA models
+($-29.9\%$ at every $T$).
+Table~\ref{tab:gpumatrix} reports the matrix.
+
+\begin{table}[!t]
+\caption{Seven-model RTX PRO 6000 Blackwell fp16 matrix at 30\%-excision:
+measured WikiText-2 perplexity, LAMBADA top-1 (\%), live KV-cache cut (\%).}
+\label{tab:gpumatrix}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{1.6pt}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Model & M & Exc. & WT-2$_{0}$ & WT-2$_{30}$ & LAMB$_{0}$ & LAMB$_{30}$ & KV \\
+\midrule
+GPT-2 Small & 124.4 & 43/144 & 36.69 & 66.08 & 35.2 & 20.4 & 29.9 \\
+GPT-2 Medium & 354.8 & 115/384 & 27.02 & 40.05 & 48.8 & 24.4 & 30.0 \\
+OPT-125M & 125.2 & 43/144 & 39.94 & 52.89 & 41.6 & 31.6 & 29.9 \\
+Pythia-160M & 162.3 & 43/144 & 38.24 & 43.25 & 39.2 & 21.6 & 29.9 \\
+Pythia-410M & 405.3 & 115/384 & 23.40 & 27.98 & 53.6 & 23.2 & 30.0 \\
+SmolLM-135M & 134.5 & 81/270 & 24.39 & 43.80 & 38.8 & 8.8 & 26.7 \\
+Qwen2.5-0.5B & 494.0 & 98/336 & 18.67 & 35.98 & 53.2 & 13.2 & 16.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The unrepaid envelope is architecture-dependent and wide: WikiText-2 inflation
+at the excision point spans $+13.1\%$ (Pythia-160M), $+19.6\%$ (Pythia-410M),
+$+32.5\%$ (OPT-125M), $+48.2\%$ (GPT-2 Medium), $+79.6$--$80.1\%$ (SmolLM-135M,
+GPT-2 Small), and $+92.7\%$ (Qwen2.5-0.5B), while LAMBADA top-1 falls from
+39--54\% to 9--32\%. Qwen2.5-0.5B pairs the best baseline (18.67) with the
+largest single-stream decode gain ($+7.3\%$ at $B{=}1$, versus $+0.3$ to
+$+4.3\%$ elsewhere) and the sharpest downstream cliff.
+
+\emph{GQA KV sharing bounds the realizable cache cut.} The Theorem-3 algebra
+counts one cache entry per query head, exact for multi-head attention but an
+upper bound for grouped-query attention. Qwen2.5-0.5B serves 14 query heads
+per layer from 2 KV heads (group size 7): the GQA-aligned mask excises 98 of
+336 query heads, removing exactly 2 of the 12 materialised per-layer KV
+units --- a measured 16.7\% cut ($1.5{\to}1.25$\,MB at $T{=}128$) against the
+29.2\% per-query-head prediction; SmolLM-135M
+shows the same gap in milder form (26.7\% measured, 24 of 90 KV units). The
+memory claim therefore holds per KV head, divided by the GQA sharing factor.
+
+\emph{Fine-tuning repayment.} A companion sweep fine-tunes each surgically
+pruned model for two epochs of AdamW on 2000 WikiText-2 training windows
+(1.02M tokens, disjoint from evaluation) and re-measures perplexity
+(Table~\ref{tab:repay}). The repair fraction---damage repaid relative to the
+surgery-time damage---exceeds 100\% for five of six models at 10\% excision
+(the budget more than erases the damage) and settles at 15.0--56.9\% at
+30\% excision. Repayment does not flatten the sensitivity ordering: the
+sounder 30\% masks (Pythia, OPT) retain larger post-repair gaps than SmolLM,
+where only 15.0\% of the damage is repaid. The unrepaid budgets of
+Tables~\ref{tab:master}--\ref{tab:crossarch} are therefore lower bounds:
+5--10\% excision is near-free after any fine-tuning budget, while 30\%
+remains measurably costly after two epochs.
+
+\begin{table}[!t]
+\caption{Fine-tuning repayment (two epochs, 1.02M WikiText-2 train tokens,
+AdamW $\mathrm{lr}{=}10^{-5}$): repair fraction (\% of the surgery-time damage
+repaid) per excision ratio. Parenthesised values give the GQA-snapped ratio of
+Qwen2.5-0.5B; ``--'' marks unmeasured points.}
+\label{tab:repay}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{lrrrr}
+\toprule
+Model & 10\% & 20\% & 30\% & 40\% \\
+\midrule
+GPT-2 Small & 150.2 & 64.9 & 34.5 & 29.8 \\
+GPT-2 Medium & 254.3 & 68.8 & 34.1 & 24.8 \\
+OPT-125M & -- & -- & 52.6 & -- \\
+Pythia-160M & 430.5 & 118.5 & 56.9 & 27.5 \\
+Pythia-410M & 299.1 & 71.8 & 28.9 & 17.0 \\
+SmolLM-135M & 52.6 & 23.3 & 15.0 & 16.0 \\
+Qwen2.5-0.5B & 137.2\,(8.3) & 51.3\,(18.8) & 45.1\,(29.2) & 52.2\,(39.6) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Discussion: the Mechanistic Genesis of Layer Vulnerability Asymmetry}
 
@@ -654,65 +758,53 @@ tolerate without repayment.
 \section{Conclusion and Future Work}
 This paper introduced an exact, hook-based first-order sensitivity geometry for
 structural attention-head pruning in sub-billion language models, proved its
-functional and surgical equivalences, and benchmarked it across three
-architectures spanning the modern SLM design space under a strict, token-exact
-evaluation protocol with full decimal-level traceability from raw telemetry to
-typeset tables. Three measured conclusions stand. First, layer vulnerability
-asymmetry is real and pronounced, but its direction is architectural: early-layer
-criticality in GPT-2 (Post-LN, absolute positions), a defended U-shaped middle in
-SmolLM (Pre-LN, RoPE, GQA). Second, without fine-tuning repayment the honest
-redundancy budget is narrow---5\% to 10\% of heads at a 5\% perplexity
-tolerance---not the 35--40\% reported for pipelines that amortise pruning errors
-by post-training; a static heuristic can consume the entire budget in one step
-(30\% excision under L2 ranking degrades perplexity by 5.9$\times$). Third,
+functional and surgical equivalences, and benchmarked it under a strict,
+token-exact protocol with decimal-level traceability. Three measured conclusions
+stand. First, layer vulnerability asymmetry is real, but its direction is
+architectural: early-layer criticality in GPT-2 (Post-LN), a defended U-shaped
+middle in SmolLM (Pre-LN, RoPE, GQA). Second, without fine-tuning repayment the
+honest redundancy budget is narrow---5--10\% of heads at a 5\% perplexity
+tolerance---not the 35--40\% of pipelines that amortise pruning errors by
+post-training; a static heuristic can consume the entire budget in one step
+(L2 ranking at 30\% excision degrades perplexity by 5.9$\times$). Third,
 physically excised heads deliver exact, Theorem-3-linear KV-cache savings and
-measured CPU decode speedups of 11--18\% at $B \in \{1,8\}$; on CUDA, however,
-dense kernels do not monetise head sparsity, so wall-clock decode is at parity
-while the KV-cache and bandwidth reduction remains exact and immediate
-(Section~\ref{sec:gpu}).
+measured CPU decode speedups of 11--18\%; on CUDA, dense kernels do not
+monetise head sparsity, so wall-clock decode is at parity while the cache and
+bandwidth reduction remains exact and immediate, with the Blackwell matrix
+additionally showing $+0.3$ to $+7.3\%$ single-stream decode gains and an exact
+16.7--30.0\% measured cache cut (Section~\ref{sec:gpumatrix}). Future work:
+(i)~per-layer low-rank repayment coupled to the sensitivity map, for which the
+measured 15.0--56.9\% whole-model repayment sets the baseline to beat;
+(ii)~Mixture-of-Experts routing; and (iii)~on-chip SRAM deployment, where the
+Theorem-3 algebra directly determines tile budgets. All code, raw telemetry,
+and artefacts are released for independent verification.
 
-Future work proceeds along three tracks: (i) per-layer
-low-rank repayment to convert the narrow excision envelope into a wider one;
-(ii) extension to Mixture-of-Experts routing, where per-expert head sensitivity
-couples routing decisions with capacity allocation; and (iii) on-chip SRAM
-deployment, in which the Theorem-3 KV-cache algebra directly determines tile
-budgets. All code, raw telemetry, and generated artefacts are released for
-independent verification.
-
-\subsection{Deployment Recommendations}
-The measurements translate into three concrete deployment rules for sub-billion
-decoders. (1)~\emph{Do not trust static magnitude}: any parameter-norm schedule
-is functionally uncorrelated with head necessity at this scale, and random
-masking is statistically safer than L2 ranking at equal sparsity
-(Table~\ref{tab:paradigms}). (2)~\emph{Protect the first quarter, thin the
-last}: for Post-LN models such as GPT-2, keep early-layer heads at full
-allocation and concentrate any excision budget in the deep quarter, where
-$>2/3$ of heads are individually disposable at $P{=}0.30$; for Pre-LN/RoPE
-models protect the middle band instead. (3)~\emph{Claim only the KV-cache
-saving that the mask proves}: the Theorem-3 algebra gives an exact, verifiable
-memory and bandwidth budget per layer, e.g.\ 288.00\,MB$\to$192.00\,MB at 30\%
-excision ($B{=}8$, $T{=}1024$, fp16) with an exact bandwidth and cache-footprint
-reduction on every backend, whereas perplexity-based claims require the union
-of the corpus- and probe-level evidence of Tables~\ref{tab:master}--\ref{tab:downstream}.
+\emph{Deployment recommendations.} For sub-billion decoders: (1)~do not trust
+static magnitude---parameter norms are functionally uncorrelated with head necessity,
+and random masking is safer than L2 ranking (Table~\ref{tab:paradigms});
+(2)~protect the first quarter, thin the last---full allocation in early Post-LN
+layers and the middle band of Pre-LN/RoPE models, excision concentrated in the
+deep quarter; (3)~claim only the KV-cache saving the mask proves---Theorem~3
+fixes the exact per-layer memory budget, while perplexity claims require the
+corpus- and probe-level evidence of Tables~\ref{tab:master}--\ref{tab:downstream}.
 
 \subsection{Limitations and Threats to Validity}
-Four limitations bound the scope of our claims. First, the CPU benchmark matrix
-of Tables~\ref{tab:master}--\ref{tab:latency} runs in fp32 on CPU, with the
-GPU checks of Section~\ref{sec:gpu} limited to GPT-2 Small at 30\% (fp32 on a
-Tesla T4; end-to-end fp16 on Blackwell silicon); kernel-integrated sparse
-execution and CUDA profiles of the remaining architectures remain unmeasured.
-The Theorem-3 memory claims
-are precision- and backend-independent and are confirmed exactly on CUDA in
-both protocols. Second, the
-calibration corpus is small (150 windows) by design---the method targets
-resource-constrained owners---and a larger calibration set could shift marginal
-head rankings; the Taylor/Fisher agreement ($r=0.927$) suggests the global
-geometry is stable at this scale. Third, our protocol deliberately excludes
-fine-tuning repayment, so the measured 5--10\% budgets characterise
-\emph{unrepaid} excision only and are lower bounds in the presence of repair.
-Fourth, CPU wall-clock latency exhibits scheduler-scale jitter visible in
-Table~\ref{tab:master}; we therefore base batch-scale claims on replicated
-timing (7 repeats, synchronised clocks) and report standard deviations alongside
+Four limitations bound the scope of our claims. First, the CPU matrix of
+Tables~\ref{tab:master}--\ref{tab:latency} runs in fp32 on CPU, with the GPU
+matrix of Section~\ref{sec:gpumatrix} replicating all seven architectures in
+fp16 only at the 30\%-excision point (fp32-GPU replication beyond GPT-2 Small,
+full-ratio GPU sweeps, and kernel-integrated sparse execution remain
+unmeasured); calibration sessions differ between CPU and GPU pipelines, so the
+two masks are not head-identical and only protocol-level comparisons are
+drawn. Second, the calibration corpus is small (150 windows) by
+design---the method targets resource-constrained owners---and a larger set
+could shift marginal head rankings; the Taylor/Fisher agreement ($r=0.927$)
+suggests the global geometry is stable at this scale. Third, the repayment
+study covers a single two-epoch AdamW budget, so the measured repair fractions
+(15.0--56.9\% at 30\% excision) characterise one modest budget; the unrepaid
+5--10\% budgets are lower bounds in the presence of any repair. Fourth, CPU
+wall-clock latency exhibits scheduler-scale jitter, so batch-scale claims rest
+on replicated timing (7 repeats) with standard deviations reported alongside
 every latency figure.
 
 \section{Related Work}
@@ -737,29 +829,23 @@ innovations (RoPE~\cite{su2024roformer}, SwiGLU~\cite{shazeer2020glu},
 GQA~\cite{ainslie2023gqa}, sparsity-aware attention~\cite{laterale2023heads})
 define the modern SLM chassis represented by SmolLM~\cite{allal2025smollm}.
 
-Three threads of efficiency work bracket our contribution. On the criterion
-side, movement pruning~\cite{sanh2020movement} and related gradient-aware
-criteria bring training signal into pruning decisions but typically assume a
-fine-tuning repair phase; our measurements quantify exactly how much of the head
-budget survives when that phase is unavailable. On the evaluation side,
-sliding-window perplexity protocols~\cite{merity2016pointer} and the LAMBADA
+Three threads of efficiency work bracket our contribution. Movement
+pruning~\cite{sanh2020movement} brings training signal into pruning decisions
+but typically assumes a fine-tuning repair phase; our measurements quantify how
+much head budget survives without one. Sliding-window perplexity
+protocols~\cite{merity2016pointer} and the LAMBADA
 probe~\cite{paperno2016lambada} supply the token-exact retention measures our
-audit requires. On the systems side, quantisation and KV-cache management
+audit requires. Quantisation and KV-cache management
 (sub-quadratic caches, paged attention~\cite{kwon2023efficient}) attack the
-memory wall through lower-precision or better-allocated storage, which is
-orthogonal to removing the cache's \emph{structural source}: excised heads no
+memory wall through lower-precision or better-allocated storage, orthogonal to
+removing the cache's \emph{structural source}: excised heads no
 longer allocate, copy, or load KV state at all, compounding multiplicatively
 with backend-level optimisations.
 
-\section{Conclusion and Future Work}
-%% CONCLUSION-NARRATIVE
-
 \section*{Acknowledgment}
-The author thanks the maintainers of the open-source neural-network tooling that
-made the executed benchmarks possible, including the PyTorch, Hugging Face
-\texttt{transformers}/\texttt{datasets}, matplotlib, pandas, NumPy, and SciPy
-projects, and the SmolLM team for releasing publicly downloadable sub-billion
-checkpoints.
+The author thanks the open-source tooling maintainers (PyTorch, Hugging Face
+\texttt{transformers}/\texttt{datasets}, matplotlib, pandas, NumPy, SciPy) that
+made the executed benchmarks possible.
 
 \balance
 \bibliographystyle{IEEEtranS}
