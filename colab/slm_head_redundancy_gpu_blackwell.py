@@ -161,12 +161,22 @@ def _(
         )
     else:
         _banner("③ pulling latest repo")
-        _pull = subprocess.run(
-            ["git", "-C", _REPO, "pull", "--ff-only"],
-            capture_output=True, text=True,
+        subprocess.run(
+            ["git", "-C", _REPO, "fetch", "origin", "main"],
+            capture_output=True, text=True, check=True,
         )
-        if _pull.returncode != 0:
-            raise RuntimeError(f"git pull failed:\n{_pull.stderr[-2000:]}")
+        if subprocess.run(
+            ["git", "-C", _REPO, "merge", "--ff-only", "origin/main"],
+            capture_output=True, text=True,
+        ).returncode != 0:
+            # Untracked artifacts from earlier runs in this session can block a
+            # fast-forward when a pushed update touches the same paths. Reset:
+            # committed measured data is identical, locally-only artifacts stay.
+            _banner("④ fast-forward blocked by local artifacts — resetting to origin/main")
+            subprocess.run(
+                ["git", "-C", _REPO, "reset", "--hard", "origin/main"],
+                capture_output=True, text=True, check=True,
+            )
 
     for _pkg in ("transformers", "datasets", "matplotlib", "tqdm"):
         try:
