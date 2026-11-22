@@ -174,6 +174,7 @@ def run(args: argparse.Namespace) -> None:
 
     tok = load_tokenizer(spec)
     model_fp32 = load_model(spec)
+    params_millions = sum(p.numel() for p in model_fp32.parameters()) / 1e6
     if args.fp16:
         model = model_fp32.half()
     else:
@@ -416,7 +417,7 @@ def run(args: argparse.Namespace) -> None:
     summary = {
         "spec": "SLM-HEAD-REDUNDANCY-MONUMENT — GPU extension",
         "model": spec.key, "hf_id": spec.hf_id,
-        "params_millions": spec.params_millions, "gpu": gpu_name,
+        "params_millions": round(params_millions, 2), "gpu": gpu_name,
         "torch": torch.__version__, "transformers": transformers.__version__,
         "ratio": args.ratio, "excised_heads": excised, "total_heads": total_heads,
         "calibration_seconds": calib_seconds,

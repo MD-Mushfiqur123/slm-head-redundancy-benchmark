@@ -2,6 +2,7 @@
   "model": "gpt2_small",
   "ratio": 0.3,
   "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "corpus": "wikitext-2-raw-v1",
   "protocol": {
     "window": 512,
     "stride": 256,

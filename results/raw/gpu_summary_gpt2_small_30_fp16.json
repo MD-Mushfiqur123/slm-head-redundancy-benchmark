@@ -2,18 +2,19 @@
   "spec": "SLM-HEAD-REDUNDANCY-MONUMENT \u2014 GPU extension",
   "model": "gpt2_small",
   "hf_id": "gpt2",
-  "params_millions": 0.0,
+  "params_millions": 124.44,
   "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
   "torch": "2.11.0+cu130",
   "transformers": "5.20.1",
   "ratio": 0.3,
   "excised_heads": 43,
   "total_heads": 144,
-  "calibration_seconds": 1.1122051760000033,
+  "calibration_seconds": 1.1247588729999975,
   "retention": {
     "model": "gpt2_small",
     "ratio": 0.3,
     "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "corpus": "wikitext-2-raw-v1",
     "protocol": {
       "window": 512,
       "stride": 256,
@@ -58,6 +59,8 @@
     "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
     "torch": "2.11.0+cu130",
     "surgery_max_logit_diff": 0.0,
+    "surgery_rel_logit_diff": 0.0,
+    "surgery_rel_tolerance": 0.005,
     "protocol": {
       "decode_steps": 32,
       "repeats": 7,
@@ -67,48 +70,48 @@
     "batch_sizes": {
       "1": {
         "unpruned": {
-          "decode_ms_per_token": 3.908068933035683,
-          "decode_std_ms_per_token": 0.02477245150050091,
-          "prefill_ms": 3.837761999999348,
-          "prefill_std_ms": 0.13095770607800297
+          "decode_ms_per_token": 3.689613321428618,
+          "decode_std_ms_per_token": 0.036606117839327997,
+          "prefill_ms": 3.72902028571279,
+          "prefill_std_ms": 0.030555832537101608
         },
         "pruned_30": {
-          "decode_ms_per_token": 3.8151108794641786,
-          "decode_std_ms_per_token": 0.12655931354425906,
-          "prefill_ms": 3.996788571427601,
-          "prefill_std_ms": 0.03394136062667913
+          "decode_ms_per_token": 3.9397932767856987,
+          "decode_std_ms_per_token": 0.006812375312941955,
+          "prefill_ms": 3.9700585714277685,
+          "prefill_std_ms": 0.020158707169819642
         },
-        "speedup_pct": 2.378618575166669
+        "speedup_pct": -6.780655140853931
       },
       "4": {
         "unpruned": {
-          "decode_ms_per_token": 3.819539437500019,
-          "decode_std_ms_per_token": 0.009490236049739207,
-          "prefill_ms": 3.968678142856317,
-          "prefill_std_ms": 0.040874190064712046
+          "decode_ms_per_token": 3.987916133928618,
+          "decode_std_ms_per_token": 0.032357695781545265,
+          "prefill_ms": 4.102626142854758,
+          "prefill_std_ms": 0.019070973763338533
         },
         "pruned_30": {
-          "decode_ms_per_token": 4.149312017857287,
-          "decode_std_ms_per_token": 0.011199103126774915,
-          "prefill_ms": 4.26934857142872,
-          "prefill_std_ms": 0.02969348072774005
+          "decode_ms_per_token": 4.126612700892794,
+          "decode_std_ms_per_token": 0.012763490177939285,
+          "prefill_ms": 4.255612714286729,
+          "prefill_std_ms": 0.024922081984714833
         },
-        "speedup_pct": -8.633831009036852
+        "speedup_pct": -3.4779208565637987
       },
       "8": {
         "unpruned": {
-          "decode_ms_per_token": 4.080095950892838,
-          "decode_std_ms_per_token": 0.02989369828416945,
-          "prefill_ms": 4.288389714283929,
-          "prefill_std_ms": 0.03971589216587875
+          "decode_ms_per_token": 4.068810339285633,
+          "decode_std_ms_per_token": 0.0231535726859991,
+          "prefill_ms": 4.2481372857179975,
+          "prefill_std_ms": 0.03347150644149755
         },
         "pruned_30": {
-          "decode_ms_per_token": 4.003028174107153,
-          "decode_std_ms_per_token": 0.20043913294088558,
-          "prefill_ms": 4.011083142858395,
-          "prefill_std_ms": 0.04893508829790671
+          "decode_ms_per_token": 4.111027580357148,
+          "decode_std_ms_per_token": 0.007937208087392662,
+          "prefill_ms": 4.275439714285361,
+          "prefill_std_ms": 0.022307434175402704
         },
-        "speedup_pct": 1.8888716763835078
+        "speedup_pct": -1.0375819355326943
       }
     }
   },
@@ -163,7 +166,8 @@
   "equivalence": {
     "surgery_vs_gating_max_logit_diff": 0.0,
     "relative": 0.0,
-    "threshold": 0.0001
+    "threshold": 0.005,
+    "note": "relative logit max-diff between gated and physically-excised model; tolerance is dtype-and kernel-aware (fp16 5e-3, fp32 2e-3)"
   },
   "truth_law": "every value measured at runtime; no mocks"
 }
