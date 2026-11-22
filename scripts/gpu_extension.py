@@ -173,9 +173,11 @@ def run(args: argparse.Namespace) -> None:
            f"{'fp16' if args.fp16 else 'fp32'} | {gpu_name}")
 
     tok = load_tokenizer(spec)
-    model = load_model(spec)
+    model_fp32 = load_model(spec)
     if args.fp16:
-        model = model.half()
+        model = model_fp32.half()
+    else:
+        model = model_fp32
     model = model.to(device).eval()
 
     # ── 1. calibration ────────────────────────────────────────────────────
@@ -307,15 +309,23 @@ def run(args: argparse.Namespace) -> None:
 
     probe = {"input_ids": torch.randint(0, len(tok), (2, 128), device=device),
              "attention_mask": torch.ones(2, 128, dtype=torch.long, device=device)}
-    hm = HeadGatingHookManager(model)
+    if args.fp16:
+        print("  equivalence evaluated in fp32 (fp16 attention can overflow to NaN)")
+        eq_model = model_fp32.to(device).eval()
+        eq_pruned = excise_heads(eq_model, mask).to(device).eval()
+    else:
+        eq_model, eq_pruned = model, pruned_model
+    hm = HeadGatingHookManager(eq_model)
     hm.set_mask(mask)
     with torch.no_grad():
-        logits_gated = hm.model(**probe).logits
-        logits_surgery = pruned_model(**probe).logits
+        logits_gated = eq_model(**probe).logits
+        logits_surgery = eq_pruned(**probe).logits
     equiv = float((logits_gated - logits_surgery).abs().max())
     equiv_rel = equiv / float(logits_surgery.abs().max())
     hm.clear_mask()
     hm.remove_hooks()
+    if args.fp16:
+        del eq_model, eq_pruned
     rel_tol = 5e-3 if args.fp16 else 2e-3
     assert equiv_rel < rel_tol, f"surgery mismatch: {equiv:.2e} (rel {equiv_rel:.2e})"
     if equiv_rel > 1e-4:
