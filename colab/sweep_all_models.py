@@ -37,6 +37,7 @@ def _(mo):
         আগের crashed রানের JSON থেকে summary + download cards।
         **বোতাম B (ভারী, ~2 ঘণ্টা):** বাকি ৬ মডেল sweep এক ক্লিকে।
         **বোতাম C:** একক মডেল sweep।
+        **বোতাম D:** sweep শেষে সব JSON/CSV একটা txt-এ — এজেন্টকে এক ফাইলই পাঠানো যাবে।
 
         /TRUTH LAW: প্রতিটা সংখ্যা runtime-এ মাপা — canonical measured আর্টিফ্যাক্ট overwrite হয় না।
         """
@@ -60,6 +61,9 @@ def _(mo):
     ONE_RUN = mo.ui.run_button(
         label="▶️ BUTTON C — নির্বাচিত মডেল sweep (~15-25 min)"
     )
+    BUNDLE_RUN = mo.ui.run_button(
+        label="📦 BUTTON D — সব JSON একটা txt-এ (এক ডাউনলোড, সেকেন্ড)"
+    )
     UI_ALL = mo.vstack([
         mo.md("### 🎯 BUTTON A — আগে এটা চাপো (recover, GPU ছাড়া)"),
         RECOVER_RUN,
@@ -67,8 +71,10 @@ def _(mo):
         ALL_RUN,
         mo.md("### 🎯 BUTTON C — বা একক মডেল"),
         SWEEP_DROP, ONE_RUN,
+        mo.md("### 🎯 BUTTON D — sweep শেষে সব JSON একত্রে এক txt-এ"),
+        BUNDLE_RUN,
     ])
-    return ALL_RUN, ONE_RUN, RECOVER_RUN, SWEEP_DROP, UI_ALL
+    return BUNDLE_RUN, ALL_RUN, ONE_RUN, RECOVER_RUN, SWEEP_DROP, UI_ALL
 
 
 @app.cell
@@ -316,6 +322,59 @@ def _(glob, json, mo, os, subprocess, sys, time, UI_ALL, ALL_RUN, ONE_RUN,
         + [UI_ALL],
     )
     return (RESULT_SWEEP,)
+
+
+@app.cell
+def _(RESULT_BUNDLE):
+    RESULT_BUNDLE
+    return
+
+
+@app.cell
+def _(glob, mo, os, BUNDLE_RUN, UI_ALL):
+    _RAW = "slm-head-redundancy-benchmark/results/raw"
+    _RES = "slm-head-redundancy-benchmark/results"
+    mo.stop(
+        not BUNDLE_RUN.value,
+        mo.vstack([
+            mo.md("⏸️ BUTTON D চালু হয়নি — sweep শেষ হলে (বা যখনই চাই) এটা চাপো; "
+                  "disk-এ থাকা সব GPU JSON/CSV একটা txt-এ বান্ডল হবে।"),
+            UI_ALL,
+        ]),
+    )
+    _parts = []
+    _count_b = 0
+    for _p in sorted(glob.glob(os.path.join(_RAW, "*.json"))):
+        with open(_p, "rb") as _fd_b:
+            _txt = _fd_b.read().decode("utf-8", errors="replace")
+        _nm_b = os.path.basename(_p)
+        _parts.append(f"\n\n===== results/raw/{_nm_b} =====\n" + _txt.strip())
+        _count_b += 1
+    for _p in sorted(glob.glob(os.path.join(_RES, "*.csv"))):
+        with open(_p, "rb") as _fd_b:
+            _txt = _fd_b.read().decode("utf-8", errors="replace")
+        _parts.append(f"\n\n===== results/{os.path.basename(_p)} =====\n" + _txt.strip())
+        _count_b += 1
+    mo.stop(
+        _count_b == 0,
+        mo.vstack([
+            mo.md("⚠️ disk-এ কোনো আর্টিফ্যাক্ট নেয়ই — আগে কোনো বোতাম চালাও।"),
+            UI_ALL,
+        ]),
+    )
+    _txt_all = (f"SLM-HEAD-REDUNDANCY-MONUMENT — all GPU artifacts bundle\n"
+                f"{_count_b} files · /TRUTH: every value measured at runtime\n"
+                + "".join(_parts))
+    BUNDLE_CARD = mo.download(
+        data=_txt_all.encode("utf-8"), filename="slm_all_gpu_artifacts.txt"
+    )
+    RESULT_BUNDLE = mo.vstack([
+        mo.md(f"## 📦 BUNDLE তৈরি — {_count_b} ফাইল একটা txt-এ (নিচে এক ডাউনলোড)\n\n"
+              "এজেন্টকে এই একটা ফাইল paste/upload করলেই হবে।"),
+        BUNDLE_CARD,
+        UI_ALL,
+    ])
+    return (RESULT_BUNDLE,)
 
 
 if __name__ == "__main__":
