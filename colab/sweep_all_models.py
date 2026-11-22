@@ -134,14 +134,14 @@ def _(glob, json, mo, os, RECOVER_RUN, UI_ALL):
         if "29.2" in _nm or "30" in _nm:
             continue
         with open(_p, "rb") as _fd:
-            _cards.append(mo.download(data=fh.read(), filename=_nm))
+            _cards.append(mo.download(data=_fd.read(), filename=_nm))
     if os.path.isdir("slm-head-redundancy-benchmark/results/figures"):
         for _fig in ("latency", "kv"):
             _p = os.path.join("slm-head-redundancy-benchmark/results/figures",
                               f"gpu_{_fig}_qwen2_05b.png")
             if os.path.exists(_p):
                 with open(_p, "rb") as _fd:
-                    _cards.append(mo.download(data=fh.read(), filename=os.path.basename(_p)))
+                    _cards.append(mo.download(data=_fd.read(), filename=os.path.basename(_p)))
 
     RESULT_RECOVER = mo.vstack([
         mo.md(f"## ♻️ qwen2_05b RECOVER শেষ — {len(_new)}টি সুইপ ট্যাগ পাওয়া গেছে "
@@ -285,12 +285,12 @@ def _(glob, json, mo, os, subprocess, sys, time, UI_ALL, ALL_RUN, ONE_RUN,
             if "30" in _nm or "29.2" in _nm:
                 continue
             with open(_p, "rb") as _fd:
-                _cards.append(mo.download(data=fh.read(), filename=_nm))
+                _cards.append(mo.download(data=_fd.read(), filename=_nm))
         for _fig in ("latency", "kv"):
             _p = os.path.join(_fig_abs, f"gpu_{_fig}_{_sel}.png")
             if os.path.exists(_p):
                 with open(_p, "rb") as _fd:
-                    _cards.append(mo.download(data=fh.read(), filename=os.path.basename(_p)))
+                    _cards.append(mo.download(data=_fd.read(), filename=os.path.basename(_p)))
 
     _mins_total = (time.perf_counter() - _t0) / 60
     _fail_md = (
