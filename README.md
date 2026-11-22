@@ -49,7 +49,7 @@ Interactive exploration: `streamlit run demo/app.py`.
 ## Paper-evidence notebook (no GPU required)
 
 `colab/paper_evidence.py` verifies every claim of the manuscript in seconds, directly
-against the measured artifacts in `results/raw/`: a /TRUTH-law audit of all raw JSONs,
+against the measured artifacts in `results/raw/`: a no-mock audit of all raw JSONs,
 sweep-matrix completeness, pruning-mask geometry, surgery-vs-gated-ablation logit
 equivalence, retention tables, Theorem-3 KV envelope, latency tables, a cross-check that
 the paper's exact numbers appear in `paper/main.tex`, the full figure gallery, and a
