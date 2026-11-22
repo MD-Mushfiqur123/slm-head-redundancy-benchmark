@@ -385,7 +385,7 @@ Random (5 seeds) & \begin{tabular}[c]{@{}l@{}}270.7793\\ $\pm$ 155.3170\end{tabu
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.64\columnwidth]{figure2_pareto_frontier.pdf}
+\includegraphics[width=0.58\columnwidth]{figure2_pareto_frontier.pdf}
 \caption{Pruning-ratio frontier on GPT-2 Small: WikiText-2 perplexity versus
 global excision ratio for Taylor, Fisher, L2-norm, and random pruning
 (shaded: $\pm1\sigma$ over five seeds).}
@@ -394,7 +394,7 @@ global excision ratio for Taylor, Fisher, L2-norm, and random pruning
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.62\columnwidth]{figure1_importance_heatmap.pdf}
+\includegraphics[width=0.55\columnwidth]{figure1_importance_heatmap.pdf}
 \caption{Normalised first-order Taylor head sensitivity for GPT-2 Small
 ($12\times12$): an early-layer band (0--2) with a secondary mid-depth cluster
 peaking at layer 8.}
@@ -445,7 +445,7 @@ SmolLM-135M & 24.3911 & 29.5709 & 56.3566 & 6\% \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.62\columnwidth]{figure6_cross_model_retention.pdf}
+\includegraphics[width=0.55\columnwidth]{figure6_cross_model_retention.pdf}
 \caption{Cross-model sparsity retention: absolute perplexity (a) and relative
 degradation (b) versus pruning ratio for all three architectures.}
 \label{fig:retention}
@@ -486,7 +486,7 @@ Deep (L8--L11) & 48 & 22 & 33 & 54.2 \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.72\columnwidth]{figure3_layer_vulnerability.pdf}
+\includegraphics[width=0.66\columnwidth]{figure3_layer_vulnerability.pdf}
 \caption{Head survival rate by layer at 30\% and 50\% global excision (GPT-2
 Small): early layers are defended, intermediate and deep layers lose heads
 preferentially.}
@@ -495,7 +495,7 @@ preferentially.}
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.62\columnwidth]{figure4_entropy_scatter.pdf}
+\includegraphics[width=0.55\columnwidth]{figure4_entropy_scatter.pdf}
 \caption{Mean attention entropy versus normalised Taylor sensitivity for all 144
 heads of GPT-2 Small, with the least-squares trend and Pearson correlation.}
 \label{fig:scatter}
@@ -569,7 +569,7 @@ Batch & Unpruned (ms) & 30\% pruned (ms) & Speedup \\
 
 \begin{figure}[!t]
 \centering
-\includegraphics[width=0.64\columnwidth]{figure5_kv_cache_memory.pdf}
+\includegraphics[width=0.58\columnwidth]{figure5_kv_cache_memory.pdf}
 \caption{Analytical KV-cache memory (Theorem~3, B=8, fp16) versus sequence length
 for the unpruned model and progressively pruned variants.}
 \label{fig:kv}
@@ -674,9 +674,12 @@ memory claim therefore holds per KV head, divided by the GQA sharing factor.
 pruned model for two epochs of AdamW on 2000 WikiText-2 training windows
 (1.02M tokens, disjoint from evaluation) and re-measures perplexity
 (Table~\ref{tab:repay}). The repair fraction---damage repaid relative to the
-surgery-time damage---exceeds 100\% for five of six models at 10\% excision
-(the budget more than erases the damage) and settles at 15.0--56.9\% at
-30\% excision. Repayment does not flatten the sensitivity ordering: the
+surgery-time damage---exceeds 100\% for six of seven models at 10\% excision
+(all but SmolLM-135M) and settles at 15.0--56.9\% at 30\% excision. Repair
+grows monotonically in the budget (24.0/34.5/44.0\% for GPT-2 Small and
+36.1/45.1/52.2\% for Qwen2.5-0.5B at 1/2/4 epochs) and is seed-stable
+(34.5/34.5/35.3\% over three seeds, spread $<$0.9 pp).
+Repayment does not flatten the sensitivity ordering: the
 sounder 30\% masks (Pythia, OPT) retain larger post-repair gaps than SmolLM,
 where only 15.0\% of the damage is repaid. The unrepaid budgets of
 Tables~\ref{tab:master}--\ref{tab:crossarch} are therefore lower bounds:
@@ -687,7 +690,7 @@ remains measurably costly after two epochs.
 \caption{Fine-tuning repayment (two epochs, 1.02M WikiText-2 train tokens,
 AdamW $\mathrm{lr}{=}10^{-5}$): repair fraction (\% of the surgery-time damage
 repaid) per excision ratio. Parenthesised values give the GQA-snapped ratio of
-Qwen2.5-0.5B; ``--'' marks unmeasured points.}
+Qwen2.5-0.5B; every cell is measured.}
 \label{tab:repay}
 \centering
 \scriptsize
@@ -799,10 +802,10 @@ two masks are not head-identical and only protocol-level comparisons are
 drawn. Second, the calibration corpus is small (150 windows) by
 design---the method targets resource-constrained owners---and a larger set
 could shift marginal head rankings; the Taylor/Fisher agreement ($r=0.927$)
-suggests the global geometry is stable at this scale. Third, the repayment
-study covers a single two-epoch AdamW budget, so the measured repair fractions
-(15.0--56.9\% at 30\% excision) characterise one modest budget; the unrepaid
-5--10\% budgets are lower bounds in the presence of any repair. Fourth, CPU
+suggests the global geometry is stable at this scale. Third, the repayment's budget and seed robustness are measured only at the
+endpoint architectures over 1/2/4-epoch budgets and three seeds; the canonical
+matrix is a single two-epoch budget, and larger budgets plus corpus-scale
+repayment are unmeasured. Fourth, CPU
 wall-clock latency exhibits scheduler-scale jitter, so batch-scale claims rest
 on replicated timing (7 repeats) with standard deviations reported alongside
 every latency figure.
