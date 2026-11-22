@@ -6,8 +6,7 @@ Author: **Md. Mushfiqur Rahim** — Department of Science, Govt. Azizul Haque Co
 
 This repository is the complete, reproducible implementation of an empirical study of
 attention-head redundancy in **seven** sub-billion-parameter language models (GPT-2 Small
-124M, GPT-2 Medium 355M, SmolLM-135M, OPT-125M, Pythia-160M, Pythia-410M, Qwen2.5-0.5B).
-It contains:
+124M, GPT-2 Medium 355M, SmolLM-135M, OPT-125M, Pythia-160M, Pythia-410M, Qwen2.5-0.5B):
 
 - exact-gradient **first-order Taylor** head-sensitivity scoring,
 - **empirical Fisher** (second-order) head scoring,
@@ -16,11 +15,12 @@ It contains:
 - verification that physical weight surgery is *bit-equivalent* to gated ablation,
 - sliding-window perplexity (WikiText-2 + Penn Treebank), zero-shot LAMBADA completion,
 - wall-clock decode-latency benchmarks and Theorem-3 KV-cache memory accounting,
-- publication figures and an 8-page IEEE manuscript (`paper/main.tex`,
-  compiled copy at the repo root),
-- a one-click **evidence notebook** (`colab/paper_evidence.py`) that verifies
-  every paper claim against the measured raw artifacts in seconds — see
-  *One-click evidence notebook* below.
+- publication figures and an 8-page IEEE manuscript (`paper/main.tex`, compiled copy at
+  the repo root),
+- a **paper-evidence notebook** (`colab/paper_evidence.py`) that verifies every paper
+  claim against the measured raw artifacts in seconds.
+
+**[Read the paper (PDF)](https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/SLM-HEAD-REDUNDANCY-MONUMENT.pdf)**
 
 ## The /TRUTH law
 
@@ -51,138 +51,40 @@ python scripts/run_sweep.py --model gpt2_small --metric taylor --ratios 0.0 0.3 
   --lambada --num-lambada 24 --num-calibration 24 --latency-repeats 2
 ```
 
-Interactive exploration:
+Interactive exploration: `streamlit run demo/app.py`.
 
-```bash
-streamlit run demo/app.py
-```
+## Paper-evidence notebook (no GPU required)
 
-## GPU extension on Google Colab
-
-The CPU-only sandbox produced no GPU wall-clock telemetry. `colab/slm_head_redundancy_gpu.ipynb`
-addresses this on a free Colab T4 runtime:
-
-- CUDA Taylor/Fisher calibration (150 WikiText-2 windows, full backward passes),
-- synchronized `torch.cuda.synchronize()` wall-clock decode latency at $B\\in\\{1,4,8\\}$,
-  unpruned vs. 30% physically excised model,
-- KV-cache footprint measured **directly from the live `past_key_values` tensors**
-  (cross-validating Theorem 3) across the context-length grid,
-- GQA-safe global mask, surgery-vs-gating equivalence check, WikiText-2 / PTB / LAMBADA retention.
-
-Open directly in Colab:
-`https://colab.research.google.com/github/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/colab/slm_head_redundancy_gpu.ipynb`
-
-### molab (marimo) alternative
-
-Prefer [molab](https://molab.marimo.io)? It hosts marimo notebooks on CoreWeave with a free
-**NVIDIA RTX Pro 6000 Blackwell (96 GB VRAM)** GPU, 12-hour sessions and 32 GB RAM — strictly
-more headroom than a Colab T4. Add the GitHub-synced notebook:
-
-- `MD-Mushfiqur123/slm-head-redundancy-benchmark` → `colab/slm_head_redundancy_gpu_blackwell.py`
-
-Toggle the GPU in the notebook-specs button, pick a model (all seven are in the dropdown,
-plus `all` for the full matrix) and task (`benchmark` / `repayment` / `both`), and press Run.
-The marimo app preflights CUDA, clones this repository, installs requirements, drives the
-same measured `/TRUTH` pipeline (`scripts/gpu_extension.py`, GQA auto-snap included), and
-offers every raw JSON, repayment CSV and PNG figure for download. Artifact tables and
-downloads are glob-based, so GQA-snapped ratio tags (e.g. `29.2` for Qwen2.5-0.5B) always
-resolve; a failing run no longer aborts the whole session — remaining runs finish and a
-failure report is appended. The notebook also carries a built-in **Run C — fine-tuning
-repayment** section (it drives `scripts/finetune_repayment.py` and renders the pre/post-
-repayment table with download buttons).
-
-#### Dedicated long-jobs notebook
-
-`colab/slm_head_redundancy_long_molab.py` bundles the two multi-hour experiments
-into one 12-hour molab session, with measured-table rendering and download
-cards for each:
-
-- **Run B — 7-architecture matrix** (`--model all`, resumable per-stage caches,
-  GQA auto-snap; ~2–3 h), and
-- **Run C — fine-tuning repayment** (ratios × epochs × train-windows UI,
-  optional user train corpus via `--corpus`; ~30–90 min).
-
-Same Add-from-GitHub path: `MD-Mushfiqur123/slm-head-redundancy-benchmark` →
-`colab/slm_head_redundancy_long_molab.py`.
-
-#### Full-ratio sweep notebook (one click, all models)
-
-`colab/sweep_all_models.py` sweeps the canonical 30%-excision workhorse across the full
-ratio grid on molab. Open it directly in molab (mirror your GitHub URL — replace
-`github.com` with `molab.marimo.io/github`):
-
-```
-https://molab.marimo.io/github/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/colab/sweep_all_models.py
-```
-
-Four one-click buttons:
-
-- **BUTTON A** — GPU-free recovery of an interrupted qwen2_05b run (rebuilds the summary
-  table + download cards from the JSONs already on disk);
-- **BUTTON B** — sequential full sweep of all six multi-head architectures × ratios
-  10/20/40/50/60% fp16 (`scripts/gpu_extension.py`, ~2 h per session);
-- **BUTTON C** — single-model sweep from a dropdown;
-- **BUTTON D** — bundles every `results/raw/*.json` + `results/*.csv` into one
-  `slm_all_gpu_artifacts.txt` download (verbatim /TRUTH ingest back into this repo).
-
-Canonical 30%/29.2% ratio files are never overwritten by the sweep notebook.
-
-#### Measured full-ratio sweep inventory (RTX PRO 6000 Blackwell, fp16, torch 2.11.0)
-
-`results/raw/` now carries, for each of the six multi-head models and each ratio tag
-10/20/40/50/60:
-
-- `gpu_ppl_<model>_<tag>.json` — WT-2 / PTB perplexity + LAMBADA (pruned and unpruned),
-- `gpu_mask_<model>_<tag>.json` — the excised-head mask,
-- `gpu_kv_<model>_<tag>.json` — live KV-cache bytes vs Theorem 3,
-- `gpu_latency_<model>_<tag>.json` — decode latency at B ∈ {1,4,8},
-- `gpu_summary_<model>_<tag>.json` — the combined stage summary.
-
-Paper Table `tab:fullratio` (compiled into `paper/tables/table9.tex`) reports the
-measured WT-2 perplexity matrix. The sweep is complete: every model × tag carries
-all five artifact types, measured at runtime on the RTX PRO 6000 Blackwell (fp16),
-including gpt2-medium and pythia-160m at the 60% point.
-
-#### The compiled paper
-
-The 8-page IEEE manuscript is compiled and committed at the repository root:
-
-- **[SLM-HEAD-REDUNDANCY-MONUMENT.pdf](https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/SLM-HEAD-REDUNDANCY-MONUMENT.pdf)**
-  (same build as `paper/main.pdf`; source: `paper/main.tex`, `tectonic`).
-
-#### One-click evidence notebook (no buttons, auto-runs)
-
-`colab/paper_evidence.py` is the **live proof deck** for the paper: it runs
-end-to-end in seconds with no GPU and no model download, and verifies every
-claim of the manuscript directly against the measured raw artifacts in
-`results/raw/`:
-
-- **/TRUTH LAW audit** — every truth-law JSON states the no-mock law, zero
-  parse failures, zero mock/placeholder markers;
-- **sweep-matrix completeness** — every model × tag carries all five artifact
-  types (mask / ppl / kv / latency / summary);
-- **mask geometry** — zeros == logged `excised` count, fraction ≈ requested
-  ratio, GQA `kv_group` intact;
-- **surgery ≡ gated ablation** — relative max-|Δlogit| < 2e-3 on every
-  relative-tolerance run;
-- **retention tables** — WT2 / PTB perplexity + LAMBADA, unpruned → pruned,
-  all points;
-- **Theorem 3 KV envelope** — measured live KV bytes vs the analytic bound at
-  every seq length;
-- **wall-clock latency** — speedup % at B ∈ {1, 4, 8};
-- **paper cross-check** — the exact measured strings appear in
-  `paper/main.tex`, all six figures exist, compiled PDF = 8 pages;
-- **full figure gallery** — every rendered sweep figure, and a single
-  `slm_paper_evidence_bundle.txt` download card (verdict report + every raw
-  JSON).
-
-Open directly in molab:
+`colab/paper_evidence.py` verifies every claim of the manuscript in seconds, directly
+against the measured artifacts in `results/raw/`: a /TRUTH-law audit of all raw JSONs,
+sweep-matrix completeness, pruning-mask geometry, surgery-vs-gated-ablation logit
+equivalence, retention tables, Theorem-3 KV envelope, latency tables, a cross-check that
+the paper's exact numbers appear in `paper/main.tex`, the full figure gallery, and a
+one-shot bundle download. Open it at:
 
 ```
 https://molab.marimo.io/github/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/colab/paper_evidence.py
 ```
 
-Prefer the terminal / a plain CUDA machine? The same pipeline ships as a standalone CLI:
+## GPU measurement notebooks (molab)
+
+The CPU-only development environment produced no wall-clock telemetry; the GPU
+measurement campaign ran on **molab (marimo)** with an **NVIDIA RTX Pro 6000 Blackwell
+Server Edition (96 GB)**, fp16, torch 2.11.0. Any notebook opens by mirroring its GitHub
+URL (replace `github.com` with `molab.marimo.io/github`):
+
+| Notebook | Purpose |
+|----------|---------|
+| `colab/slm_head_redundancy_gpu_blackwell.py` | benchmark / fine-tuning repayment for a chosen model (CUDA calibration, latency, KV) |
+| `colab/slm_head_redundancy_long_molab.py` | 12-hour session: full 7-architecture matrix + repayment sweep |
+| `colab/sweep_all_models.py` | full-ratio sweep (10/20/40/50/60%), resumable, with bundle download |
+| `colab/slm_head_redundancy_gpu.ipynb` | original Colab T4 variant (historical) |
+
+All notebooks drive the same measured pipeline (`scripts/gpu_extension.py`, GQA-safe
+ratio snapping included) and offer every raw JSON / CSV / figure for download.
+Canonical 30%/29.2% ratio artifacts are never overwritten.
+
+## GPU CLI
 
 ```bash
 python scripts/gpu_extension.py --model gpt2_small --ratio 0.30
@@ -191,36 +93,19 @@ python scripts/gpu_extension.py --model smollm_135m --ratio 0.055556
 python scripts/gpu_extension.py --model opt_125m --ratio 0.30 --corpus data/my_corpus.txt
 ```
 
-The registry now covers **seven sub-billion architectures**, spanning four parameter
-families: GPT-2 Small/Medium (Post-LN, absolute), **SmolLM-135M** (LLaMA family,
-RoPE, SwiGLU, GQA group 3), **OPT-125M** (pre-LN, learned positions),
-**Pythia-160m/410m** (GPT-NeoX, RoPE, fused interleaved QKV with dedicated
-physical surgery), and **Qwen2.5-0.5B** (RoPE, SwiGLU, GQA group 7). GQA models
-take a group-aligned ratio (e.g. `--ratio 0.291667` for Qwen2.5-0.5B; 0.30 for
-SmolLM). Run the whole matrix sequentially with `--model all` (resumable via the
-per-stage artifacts, so an interrupted run loses only the current stage).
-
-All stages carry per-model/per-ratio caches in `results/raw/` (`--force` recomputes).
-
-Everything the notebook prints is measured on the runtime (/TRUTH law); results land in
-`results/raw/gpu_*.json` and can be pushed back to a `gpu-telemetry` branch with the
-optional final cell (user's own fine-grained PAT, never stored).
-
-### Runbook: fast vs. long experiments
-
-- **Fast (minutes, any GPU runtime):** one-model 30% profile —
-  `--model gpt2_small` (~5 min on Blackwell); a calibration-only cache warm-up;
-  the fp16 on/off switch for precision ablation.
-- **Long (hours, 12-hour molab session):** `--model all` (seven architectures ×
-  five stages, resumable — GQA ratios now snap automatically, e.g. Qwen2.5-0.5B
-  logs `0.3000 -> 0.291667` and proceeds), and the fine-tuning repayment sweep
-  (`scripts/finetune_repayment.py`, see below).
+The registry covers **seven sub-billion architectures**, spanning four parameter
+families: GPT-2 Small/Medium (Post-LN, absolute positions), **SmolLM-135M** (LLaMA
+family, RoPE, SwiGLU, GQA group 3), **OPT-125M** (pre-LN, learned positions),
+**Pythia-160M/410M** (GPT-NeoX, RoPE, fused interleaved QKV with dedicated physical
+surgery), and **Qwen2.5-0.5B** (RoPE, SwiGLU, GQA group 7). GQA models take a
+group-aligned ratio (e.g. `--ratio 0.291667` for Qwen2.5-0.5B; 0.30 for SmolLM). The
+whole matrix runs sequentially with `--model all`; per-stage caches in `results/raw/`
+make the runs resumable (`--force` recomputes).
 
 ### Fine-tuning repayment experiment (the paper's Future-Work track i)
 
 `scripts/finetune_repayment.py` measures how much of the excision damage a small
-fine-tuning budget repairs — the comparison the paper's honest no-repayment budgets
-(5–10%) currently lack:
+fine-tuning budget repairs:
 
 ```bash
 python scripts/finetune_repayment.py --model gpt2_small \
@@ -233,9 +118,7 @@ python scripts/finetune_repayment.py --model gpt2_small \
 It calibrates Taylor importance exactly like the main pipeline, excises with GQA-safe
 physical surgery, fine-tunes each pruned model (AdamW, cosine schedule) and writes
 pre/post-repayment perplexity, ΔPPL and repair-% per ratio to
-`results/raw/repayment_<model>.json` + `results/repayment_<model>.csv`. Every number
-is measured at runtime (/TRUTH law); a 12-hour molab session covers all four ratios
-comfortably.
+`results/raw/repayment_<model>.json` + `results/repayment_<model>.csv`.
 
 ### User-supplied corpora
 
@@ -245,6 +128,21 @@ auto-detected or forced with `text_column=`), `.jsonl` (first of
 `text/content/body/sentence/document`), or `hf:org/name` Hugging Face datasets.
 The first `--num-calibration` windows go to calibration, the next `--num-eval` to
 evaluation, preserving the paper's zero-overlap isolation protocol.
+
+## Measured full-ratio sweep inventory (RTX PRO 6000 Blackwell, fp16)
+
+`results/raw/` carries, for each of the six multi-head models and each ratio tag
+10/20/40/50/60 (plus the canonical 30%/29.2% points):
+
+- `gpu_ppl_<model>_<tag>.json` — WT-2 / PTB perplexity + LAMBADA (pruned and unpruned),
+- `gpu_mask_<model>_<tag>.json` — the excised-head mask,
+- `gpu_kv_<model>_<tag>.json` — live KV-cache bytes vs Theorem 3,
+- `gpu_latency_<model>_<tag>.json` — decode latency at B ∈ {1,4,8},
+- `gpu_summary_<model>_<tag>.json` — the combined stage summary.
+
+Paper Table `tab:fullratio` (compiled into `paper/tables/table9.tex`) reports the
+measured WT-2 perplexity matrix. The sweep is complete: every model × tag carries all
+five artifact types.
 
 ## Method summary
 
@@ -262,6 +160,8 @@ evaluation, preserving the paper's zero-overlap isolation protocol.
    $\mathrm{round}(L\cdot N_h\cdot P)$ least-important heads receive $\alpha=0$.
 4. **Physical surgery** removes the corresponding QKV/O parameter blocks
    (GQA-aware group alignment for SmolLM), verified numerically identical to gating.
+   When every head of a layer is ablated, the o-projection weight is zeroed but the
+   shared output bias is retained, matching the gated model's $o(0)=b$ semantics.
 5. **Evaluation.** Sliding-window perplexity (`stride=256, max_length=512`),
    LAMBADA target-word completion, decode latency (B ∈ {1,4,8}), KV-cache MB.
 
