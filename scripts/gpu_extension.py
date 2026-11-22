@@ -173,12 +173,8 @@ def run(args: argparse.Namespace) -> None:
            f"{'fp16' if args.fp16 else 'fp32'} | {gpu_name}")
 
     tok = load_tokenizer(spec)
-    model_fp32 = load_model(spec)
-    params_millions = sum(p.numel() for p in model_fp32.parameters()) / 1e6
-    if args.fp16:
-        model = model_fp32.half()
-    else:
-        model = model_fp32
+    model = load_model(spec)
+    params_millions = sum(p.numel() for p in model.parameters()) / 1e6
     model = model.to(device).eval()
 
     # ── 1. calibration ────────────────────────────────────────────────────
@@ -303,19 +299,11 @@ def run(args: argparse.Namespace) -> None:
 
     # ── 4. surgery + latency ──────────────────────────────────────────────
     banner("stage 4: physical surgery + equivalence + synchronized latency")
-    pruned_model = excise_heads(model, mask)
-    if args.fp16:
-        pruned_model = pruned_model.half()
-    pruned_model = pruned_model.eval().to(device)
+    pruned_model = excise_heads(model, mask).eval().to(device)
 
     probe = {"input_ids": torch.randint(0, len(tok), (2, 128), device=device),
              "attention_mask": torch.ones(2, 128, dtype=torch.long, device=device)}
-    if args.fp16:
-        print("  equivalence evaluated in fp32 (fp16 attention can overflow to NaN)")
-        eq_model = model_fp32.to(device).eval()
-        eq_pruned = excise_heads(eq_model, mask).to(device).eval()
-    else:
-        eq_model, eq_pruned = model, pruned_model
+    eq_model, eq_pruned = model, pruned_model
     hm = HeadGatingHookManager(eq_model)
     hm.set_mask(mask)
     with torch.no_grad():
@@ -325,9 +313,7 @@ def run(args: argparse.Namespace) -> None:
     equiv_rel = equiv / float(logits_surgery.abs().max())
     hm.clear_mask()
     hm.remove_hooks()
-    if args.fp16:
-        del eq_model, eq_pruned
-    rel_tol = 5e-3 if args.fp16 else 2e-3
+    rel_tol = 2e-3
     assert equiv_rel < rel_tol, f"surgery mismatch: {equiv:.2e} (rel {equiv_rel:.2e})"
     if equiv_rel > 1e-4:
         print(
@@ -354,6 +340,9 @@ def run(args: argparse.Namespace) -> None:
                                     "warmup": args.lat_warmup,
                                     "prefill_len": args.prefill_len},
                        "batch_sizes": {}}
+        if args.fp16:
+            model = model.half().eval()
+            pruned_model = pruned_model.half().eval()
         pruned_name = f"pruned_{ratio_tag(args.ratio)}"
         for vname, vmodel in (("unpruned", model), (pruned_name, pruned_model)):
             for b in (1, 4, 8):
@@ -425,8 +414,9 @@ def run(args: argparse.Namespace) -> None:
         "equivalence": {"surgery_vs_gating_max_logit_diff": equiv,
                         "relative": equiv_rel, "threshold": rel_tol,
                         "note": "relative logit max-diff between gated and "
-                                "physically-excised model; tolerance is dtype-"
-                                "and kernel-aware (fp16 5e-3, fp32 2e-3)"},
+                                "physically-excised model; evaluated in fp32 "
+                                "regardless of --fp16 (fp16 is scoped to "
+                                "latency/KV profiling only; tolerance 2e-3)"},
         "truth_law": "every value measured at runtime; no mocks",
     }
     json.dump(summary, open(summary_path, "w"), indent=2)
