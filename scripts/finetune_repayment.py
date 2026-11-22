@@ -59,6 +59,10 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--lr", type=float, default=1e-5)
     ap.add_argument("--warmup-frac", type=float, default=0.05)
+    ap.add_argument("--seed", type=int, default=7,
+                    help="torch/numpy seed; varies calibration batch order and FT")
+    ap.add_argument("--out-suffix", default="",
+                    help="suffix for output JSON/CSV filenames, e.g. _e4")
     ap.add_argument("--corpus", default="",
                     help="optional user corpus (.txt/.csv/.jsonl/hf:...) "
                          "replacing WikiText-2 for calibration + evaluation")
@@ -142,10 +146,10 @@ def main() -> None:
     device = torch.device(args.device)
 
     os.makedirs("results/raw", exist_ok=True)
-    torch.manual_seed(7)
-    np.random.seed(7)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
 
-    out_json = f"results/raw/repayment_{spec.key}.json"
+    out_json = f"results/raw/repayment_{spec.key}{args.out_suffix}.json"
     banner(f"fine-tuning repayment | {spec.hf_id} | ratios {args.ratios} | "
            f"{device.type} | {torch.cuda.get_device_name(0) if device.type == 'cuda' else 'CPU'}")
 
@@ -186,7 +190,7 @@ def main() -> None:
     hm = HeadGatingHookManager(base)
     taylor = TaylorImportanceScorer()
     n_cal_tokens = sum(len(s) for s in calibration)
-    rng = np.random.default_rng(7)
+    rng = np.random.default_rng(args.seed)
     order = rng.permutation(len(calibration))
     cal_batches = [[calibration[j] for j in order[i:i + args.batch_size]]
                    for i in range(0, len(order), args.batch_size)]
@@ -218,6 +222,8 @@ def main() -> None:
                      "window": args.window, "num_eval": args.num_eval,
                      "train_corpus": train_source or "wikitext-2 train split"},
         "unpruned_ppl": unpruned_ppl["ppl"],
+        "seed": args.seed,
+        "out_suffix": args.out_suffix,
         "rows": [],
     }
     if args.ft_unpruned:
@@ -265,14 +271,14 @@ def main() -> None:
     json.dump(results, open(out_json, "w"), indent=2)
     import csv as _csv
 
-    with open(f"results/repayment_{spec.key}.csv", "w", newline="") as f:
+    with open(f"results/repayment_{spec.key}{args.out_suffix}.csv", "w", newline="") as f:
         w = _csv.writer(f)
         w.writerow(["ratio", "pre_ppl", "post_ppl", "pre_delta_pct",
                     "post_delta_pct", "repair_pct", "ft_seconds"])
         for r in results["rows"]:
             w.writerow([r["ratio"], r["pre_ppl"], r["post_ppl"], r["pre_delta_pct"],
                         r["post_delta_pct"], r["repair_pct"], r["ft_seconds"]])
-    print("artifacts:", out_json, f"+ results/repayment_{spec.key}.csv")
+    print("artifacts:", out_json, f"+ results/repayment_{spec.key}{args.out_suffix}.csv")
     banner("done — /TRUTH: every value measured at runtime")
 
 
