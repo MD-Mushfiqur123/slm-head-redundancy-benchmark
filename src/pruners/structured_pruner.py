@@ -3,7 +3,9 @@
 Excising a head is implemented by deleting its parameter rows/columns from
 the QKV and output projections (and matching bias slices). For an ablated
 head (gate = 0) the surgery is mathematically identity-preserving: the
-pruned model's logits equal the gated model's logits exactly.
+pruned model's logits equal the gated model's logits exactly. When every
+head of a layer is ablated the output-projection weight is zeroed but the
+shared output bias is retained, matching the gated model's o_proj(0) = bias.
 """
 from __future__ import annotations
 
@@ -80,11 +82,11 @@ def _excise_gpt2_layer(sl: AttentionSlicing, keep: list) -> None:
     dt = out_conv.weight.dtype
 
     if not keep:
-        # the whole layer's attention is excised: the output projection is
-        # zeroed so attention contributes exactly nothing (identity to gating)
+        # the whole layer's attention is excised: the output-projection weight
+        # is zeroed. The shared output bias is retained (it is head-owned by no
+        # excised head), so this layer contributes exactly what the gated
+        # (mask-hooked) model contributes: o_proj(0) = bias.
         _replace_parameter(out_conv, "weight", torch.zeros_like(out_conv.weight.detach()))
-        if out_conv.bias is not None:
-            _replace_parameter(out_conv, "bias", torch.zeros_like(out_conv.bias.detach()))
         return
 
     w = attn_conv.weight.detach()  # [d, 3d]
@@ -123,8 +125,6 @@ def _excise_neox_layer(sl: AttentionSlicing, keep: list) -> None:
 
     if not keep:
         _replace_parameter(out, "weight", torch.zeros_like(out.weight.detach()))
-        if out.bias is not None:
-            _replace_parameter(out, "bias", torch.zeros_like(out.bias.detach()))
         return
 
     keep_rows = torch.cat(
@@ -153,10 +153,6 @@ def _excise_llama_layer(sl: AttentionSlicing, keep: list) -> None:
         _replace_parameter(
             sl.o_proj, "weight", torch.zeros_like(sl.o_proj.weight.detach())
         )
-        if sl.o_proj.bias is not None:
-            _replace_parameter(
-                sl.o_proj, "bias", torch.zeros_like(sl.o_proj.bias.detach())
-            )
         return
     q_proj = sl.qkv_param["q"]    # Linear: weight [nh*dk, d]
     k_proj = sl.qkv_param["k"]    # Linear: weight [nkv*dk, d]

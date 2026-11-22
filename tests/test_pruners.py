@@ -161,6 +161,28 @@ class TestStructuredPruner(unittest.TestCase):
             via_surgery = pruned(input_ids=ids)["logits"]
         self.assertTrue(torch.allclose(gated, via_surgery, atol=1e-5))
 
+    def test_all_heads_excised_layer_matches_gating(self):
+        import torch
+
+        from tests.test_hooks import Wrapper
+        from src.core.hooks import HeadGatingHookManager
+
+        torch.manual_seed(2)
+        net = Wrapper(nl=2, d=32, nh=4)
+        for p in net.parameters():
+            p.requires_grad_(False)
+        mask = torch.zeros(2, 4)
+        ids = torch.randint(0, 50, (1, 6))
+        hm = HeadGatingHookManager(net)
+        hm.set_mask(mask)
+        with torch.no_grad():
+            gated = net(input_ids=ids)["logits"]
+        hm.remove_hooks()
+        pruned = excise_heads(net, mask)
+        with torch.no_grad():
+            via_surgery = pruned(input_ids=ids)["logits"]
+        self.assertTrue(torch.allclose(gated, via_surgery, atol=1e-5))
+
     def test_gqa_surgery_matches_gating(self):
         import torch
 
