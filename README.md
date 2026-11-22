@@ -22,13 +22,6 @@ attention-head redundancy in **seven** sub-billion-parameter language models (GP
 
 **[Read the paper (PDF)](https://github.com/MD-Mushfiqur123/slm-head-redundancy-benchmark/blob/main/SLM-HEAD-REDUNDANCY-MONUMENT.pdf)**
 
-## The /TRUTH law
-
-Every number in `results/` and every table in the paper is produced by executed code
-(`results/raw/*.json` telemetry → `results/*.csv` → `paper/tables/*.tex`). Nothing is
-hand-written or extrapolated. Re-run `python run_experiments.py` to regenerate all
-telemetry end-to-end.
-
 ## Quickstart
 
 ```bash
