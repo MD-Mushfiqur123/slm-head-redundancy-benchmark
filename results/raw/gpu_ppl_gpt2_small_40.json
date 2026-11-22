@@ -1,0 +1,42 @@
+{
+  "model": "gpt2_small",
+  "ratio": 0.4,
+  "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "corpus": "wikitext-2-raw-v1",
+  "protocol": {
+    "window": 512,
+    "stride": 256,
+    "num_eval": 200,
+    "lambada": 250
+  },
+  "wt2_unpruned": {
+    "ppl": 36.67600681847752,
+    "tokens": 102200
+  },
+  "ptb_unpruned": {
+    "ppl": 61.695869667635264,
+    "tokens": 51100
+  },
+  "lambada_unpruned": {
+    "top1_accuracy": 0.356,
+    "full_word_accuracy": 0.356,
+    "target_word_ppl": 34.66231759269466,
+    "num_scored_examples": 250.0,
+    "n_correct": 89.0
+  },
+  "wt2_pruned": {
+    "ppl": 94.41624182095316,
+    "tokens": 102200
+  },
+  "ptb_pruned": {
+    "ppl": 158.7367577591566,
+    "tokens": 51100
+  },
+  "lambada_pruned": {
+    "top1_accuracy": 0.18,
+    "full_word_accuracy": 0.172,
+    "target_word_ppl": 214.42933154316668,
+    "num_scored_examples": 250.0,
+    "n_correct": 45.0
+  }
+}

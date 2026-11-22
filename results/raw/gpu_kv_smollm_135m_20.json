@@ -1,0 +1,56 @@
+{
+  "model": "smollm_135m",
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "dtype_bytes": 2,
+  "fp16": true,
+  "seq_lens": {
+    "128": {
+      "T": 128,
+      "unpruned": 2.8125,
+      "pruned30": 2.25,
+      "reduction_pct": 19.999999999999996,
+      "theoretical_MB": 6.75,
+      "unpruned_theoretical_MB": 8.4375
+    },
+    "256": {
+      "T": 256,
+      "unpruned": 5.625,
+      "pruned30": 4.5,
+      "reduction_pct": 19.999999999999996,
+      "theoretical_MB": 13.5,
+      "unpruned_theoretical_MB": 16.875
+    },
+    "512": {
+      "T": 512,
+      "unpruned": 11.25,
+      "pruned30": 9.0,
+      "reduction_pct": 19.999999999999996,
+      "theoretical_MB": 27.0,
+      "unpruned_theoretical_MB": 33.75
+    },
+    "768": {
+      "T": 768,
+      "unpruned": 16.875,
+      "pruned30": 13.5,
+      "reduction_pct": 19.999999999999996,
+      "theoretical_MB": 40.5,
+      "unpruned_theoretical_MB": 50.625
+    },
+    "1024": {
+      "T": 1024,
+      "unpruned": 22.5,
+      "pruned30": 18.0,
+      "reduction_pct": 19.999999999999996,
+      "theoretical_MB": 54.0,
+      "unpruned_theoretical_MB": 67.5
+    },
+    "2048": {
+      "T": 2048,
+      "unpruned": 45.0,
+      "pruned30": 36.0,
+      "reduction_pct": 19.999999999999996,
+      "theoretical_MB": 108.0,
+      "unpruned_theoretical_MB": 135.0
+    }
+  }
+}

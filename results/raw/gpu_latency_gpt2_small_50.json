@@ -1,0 +1,63 @@
+{
+  "model": "gpt2_small",
+  "ratio": 0.5,
+  "fp16": true,
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "torch": "2.11.0+cu130",
+  "surgery_max_logit_diff": 0.00034332275390625,
+  "surgery_rel_logit_diff": 2.0507839736974653e-06,
+  "surgery_rel_tolerance": 0.002,
+  "protocol": {
+    "decode_steps": 32,
+    "repeats": 7,
+    "warmup": 2,
+    "prefill_len": 256
+  },
+  "batch_sizes": {
+    "1": {
+      "unpruned": {
+        "decode_ms_per_token": 3.6873507812499793,
+        "decode_std_ms_per_token": 0.03289919350394871,
+        "prefill_ms": 3.832869285718386,
+        "prefill_std_ms": 0.10101586179432946
+      },
+      "pruned_50": {
+        "decode_ms_per_token": 3.9452311696430393,
+        "decode_std_ms_per_token": 0.30323501695140753,
+        "prefill_ms": 4.076155142854532,
+        "prefill_std_ms": 0.1158882289475346
+      },
+      "speedup_pct": -6.993649470627283
+    },
+    "4": {
+      "unpruned": {
+        "decode_ms_per_token": 4.412261419642936,
+        "decode_std_ms_per_token": 0.2771786999474102,
+        "prefill_ms": 4.9133160000077885,
+        "prefill_std_ms": 0.23162902978325545
+      },
+      "pruned_50": {
+        "decode_ms_per_token": 3.841239732142882,
+        "decode_std_ms_per_token": 0.007021898318385958,
+        "prefill_ms": 3.982416857139372,
+        "prefill_std_ms": 0.019454577480185857
+      },
+      "speedup_pct": 12.94170116389578
+    },
+    "8": {
+      "unpruned": {
+        "decode_ms_per_token": 3.7856629821430485,
+        "decode_std_ms_per_token": 0.007114887426759704,
+        "prefill_ms": 3.9348478571404093,
+        "prefill_std_ms": 0.011109368071477591
+      },
+      "pruned_50": {
+        "decode_ms_per_token": 4.302244602678457,
+        "decode_std_ms_per_token": 0.24966081390627698,
+        "prefill_ms": 3.978264714289383,
+        "prefill_std_ms": 0.026274978749016343
+      },
+      "speedup_pct": -13.64573716604256
+    }
+  }
+}

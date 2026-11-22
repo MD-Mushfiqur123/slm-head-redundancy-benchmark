@@ -1,0 +1,173 @@
+{
+  "spec": "SLM-HEAD-REDUNDANCY-MONUMENT \u2014 GPU extension",
+  "model": "gpt2_medium",
+  "hf_id": "gpt2-medium",
+  "params_millions": 354.82,
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "torch": "2.11.0+cu130",
+  "transformers": "5.20.1",
+  "ratio": 0.4,
+  "excised_heads": 154,
+  "total_heads": 384,
+  "calibration_seconds": 4.407770134000032,
+  "retention": {
+    "model": "gpt2_medium",
+    "ratio": 0.4,
+    "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "corpus": "wikitext-2-raw-v1",
+    "protocol": {
+      "window": 512,
+      "stride": 256,
+      "num_eval": 200,
+      "lambada": 250
+    },
+    "wt2_unpruned": {
+      "ppl": 27.01778045175821,
+      "tokens": 102200
+    },
+    "ptb_unpruned": {
+      "ppl": 45.17899314326349,
+      "tokens": 51100
+    },
+    "lambada_unpruned": {
+      "top1_accuracy": 0.488,
+      "full_word_accuracy": 0.484,
+      "target_word_ppl": 18.096123516196595,
+      "num_scored_examples": 250.0,
+      "n_correct": 122.0
+    },
+    "wt2_pruned": {
+      "ppl": 42.70313161646084,
+      "tokens": 102200
+    },
+    "ptb_pruned": {
+      "ppl": 94.4043778555782,
+      "tokens": 51100
+    },
+    "lambada_pruned": {
+      "top1_accuracy": 0.12,
+      "full_word_accuracy": 0.112,
+      "target_word_ppl": 180.88979002729786,
+      "num_scored_examples": 250.0,
+      "n_correct": 30.0
+    }
+  },
+  "latency": {
+    "model": "gpt2_medium",
+    "ratio": 0.4,
+    "fp16": true,
+    "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "torch": "2.11.0+cu130",
+    "surgery_max_logit_diff": 0.0001163482666015625,
+    "surgery_rel_logit_diff": 1.1950913327979846e-06,
+    "surgery_rel_tolerance": 0.002,
+    "protocol": {
+      "decode_steps": 32,
+      "repeats": 7,
+      "warmup": 2,
+      "prefill_len": 256
+    },
+    "batch_sizes": {
+      "1": {
+        "unpruned": {
+          "decode_ms_per_token": 7.02137535267866,
+          "decode_std_ms_per_token": 0.3353784876963746,
+          "prefill_ms": 6.6553125714189525,
+          "prefill_std_ms": 0.01654148398225242
+        },
+        "pruned_40": {
+          "decode_ms_per_token": 7.0823960178574605,
+          "decode_std_ms_per_token": 0.07323414997552544,
+          "prefill_ms": 6.8033924285698175,
+          "prefill_std_ms": 0.028465436539564147
+        },
+        "speedup_pct": -0.8690699772306187
+      },
+      "4": {
+        "unpruned": {
+          "decode_ms_per_token": 7.326749142856771,
+          "decode_std_ms_per_token": 0.10650703846034486,
+          "prefill_ms": 7.420711428583867,
+          "prefill_std_ms": 0.3799147502232312
+        },
+        "pruned_40": {
+          "decode_ms_per_token": 7.286983651785611,
+          "decode_std_ms_per_token": 0.31695699612282746,
+          "prefill_ms": 7.288542571424322,
+          "prefill_std_ms": 0.10343666182962717
+        },
+        "speedup_pct": 0.5427439959498237
+      },
+      "8": {
+        "unpruned": {
+          "decode_ms_per_token": 7.097727031249589,
+          "decode_std_ms_per_token": 0.10530612574112048,
+          "prefill_ms": 7.304534142852909,
+          "prefill_std_ms": 0.11820207163194839
+        },
+        "pruned_40": {
+          "decode_ms_per_token": 7.150691875000043,
+          "decode_std_ms_per_token": 0.06812737645584431,
+          "prefill_ms": 7.319216999998649,
+          "prefill_std_ms": 0.05028706207752451
+        },
+        "speedup_pct": -0.7462226078470247
+      }
+    }
+  },
+  "kv_cache": {
+    "model": "gpt2_medium",
+    "gpu": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "dtype_bytes": 2,
+    "fp16": true,
+    "seq_lens": {
+      "128": {
+        "T": 128,
+        "unpruned": 12.0,
+        "pruned30": 7.1875,
+        "reduction_pct": 40.104166666666664,
+        "theoretical_MB": 7.1875,
+        "unpruned_theoretical_MB": 12.0
+      },
+      "256": {
+        "T": 256,
+        "unpruned": 24.0,
+        "pruned30": 14.375,
+        "reduction_pct": 40.104166666666664,
+        "theoretical_MB": 14.375,
+        "unpruned_theoretical_MB": 24.0
+      },
+      "512": {
+        "T": 512,
+        "unpruned": 48.0,
+        "pruned30": 28.75,
+        "reduction_pct": 40.104166666666664,
+        "theoretical_MB": 28.75,
+        "unpruned_theoretical_MB": 48.0
+      },
+      "768": {
+        "T": 768,
+        "unpruned": 72.0,
+        "pruned30": 43.125,
+        "reduction_pct": 40.104166666666664,
+        "theoretical_MB": 43.125,
+        "unpruned_theoretical_MB": 72.0
+      },
+      "1024": {
+        "T": 1024,
+        "unpruned": 96.0,
+        "pruned30": 57.5,
+        "reduction_pct": 40.104166666666664,
+        "theoretical_MB": 57.5,
+        "unpruned_theoretical_MB": 96.0
+      }
+    }
+  },
+  "equivalence": {
+    "surgery_vs_gating_max_logit_diff": 0.0001163482666015625,
+    "relative": 1.1950913327979846e-06,
+    "threshold": 0.002,
+    "note": "relative logit max-diff between gated and physically-excised model; evaluated in fp32 regardless of --fp16 (fp16 is scoped to latency/KV profiling only; tolerance 2e-3)"
+  },
+  "truth_law": "every value measured at runtime; no mocks"
+}

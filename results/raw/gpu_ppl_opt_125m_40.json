@@ -1,0 +1,42 @@
+{
+  "model": "opt_125m",
+  "ratio": 0.4,
+  "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+  "corpus": "wikitext-2-raw-v1",
+  "protocol": {
+    "window": 512,
+    "stride": 256,
+    "num_eval": 200,
+    "lambada": 250
+  },
+  "wt2_unpruned": {
+    "ppl": 39.934766134187264,
+    "tokens": 102200
+  },
+  "ptb_unpruned": {
+    "ppl": 51.92337531951554,
+    "tokens": 51100
+  },
+  "lambada_unpruned": {
+    "top1_accuracy": 0.416,
+    "full_word_accuracy": 0.412,
+    "target_word_ppl": 21.16108243320112,
+    "num_scored_examples": 250.0,
+    "n_correct": 104.0
+  },
+  "wt2_pruned": {
+    "ppl": 76.62604506580124,
+    "tokens": 102200
+  },
+  "ptb_pruned": {
+    "ppl": 98.51275064315885,
+    "tokens": 51100
+  },
+  "lambada_pruned": {
+    "top1_accuracy": 0.216,
+    "full_word_accuracy": 0.212,
+    "target_word_ppl": 88.99720416269722,
+    "num_scored_examples": 250.0,
+    "n_correct": 54.0
+  }
+}
